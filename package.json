@@ -1,0 +1,19 @@
+{
+  "name": "civilcopz",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm --workspace backend run dev\" \"npm --workspace frontend run dev\"",
+    "orchestrate": "node scripts/orchestrator.js",
+    "stabilize": "npm install && npm run rw-install && npx prisma generate --schema=backend/prisma/schema.prisma",
+    "start": "npm --workspace backend start",
+    "install-all": "npm install && npm run rw-install && npm run rw-setup",
+    "rw-install": "npm --workspace backend install && npm --workspace frontend install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

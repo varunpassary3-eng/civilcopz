@@ -1,0 +1,45 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'civilcopz-backend-1'
+    static_configs:
+      - targets: ['backend-1:4000']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'civilcopz-backend-2'
+    static_configs:
+      - targets: ['backend-2:4000']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'civilcopz-backend-3'
+    static_configs:
+      - targets: ['backend-3:4000']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'civilcopz-postgres'
+    static_configs:
+      - targets: ['postgres-primary:9187']
+    scrape_interval: 10s
+
+  - job_name: 'civilcopz-redis'
+    static_configs:
+      - targets: ['redis-master:9121']
+    scrape_interval: 10s
+
+  - job_name: 'civilcopz-nginx'
+    static_configs:
+      - targets: ['load-balancer:9113']
+    scrape_interval: 10s

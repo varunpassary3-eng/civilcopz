@@ -1,0 +1,117 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: civilcopz-postgres
+    environment:
+      POSTGRES_DB: civilcopz
+      POSTGRES_USER: civilcopz_user
+      POSTGRES_PASSWORD: secure_password_123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - civilcopz-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U civilcopz_user -d civilcopz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: civilcopz-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - civilcopz-network
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: civilcopz-backend
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://civilcopz_user:secure_password_123@postgres:5432/civilcopz
+      - JWT_SECRET=your-super-secure-jwt-secret-change-in-production
+      - JWT_EXPIRY=24h
+      - PORT=3000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - civilcopz-network
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ai-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: civilcopz-ai-worker
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://civilcopz_user:secure_password_123@postgres:5432/civilcopz
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - WORKER_MODE=ai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - civilcopz-network
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: unless-stopped
+    command: ["node", "workers/aiWorker.js"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: civilcopz-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - civilcopz-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  civilcopz-network:
+    driver: bridge

@@ -1,0 +1,46 @@
+{
+  "name": "civilcopz-backend",
+  "private": true,
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "worker": "WORKER_MODE=ai node server.js",
+    "build": "echo 'Backend build complete'",
+    "test": "dotenv -e .env.test -- jest",
+    "test:watch": "dotenv -e .env.test -- jest --watch",
+    "orchestrate": "node ../scripts/orchestrator.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "prisma": "^5.15.0",
+    "@prisma/client": "^5.15.0",
+    "bullmq": "^5.8.0",
+    "ioredis": "^5.3.2",
+    "zod": "^3.23.8",
+    "connection-string": "^1.0.1",
+    "prom-client": "^15.1.0",
+    "response-time": "^2.3.2",
+    "pino": "^9.1.0",
+    "pino-pretty": "^11.2.1",
+    "pino-multi-stream": "^6.0.0",
+    "nodemailer": "^6.9.7",
+    "@sentry/node": "^7.80.0",
+    "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  }
+}
