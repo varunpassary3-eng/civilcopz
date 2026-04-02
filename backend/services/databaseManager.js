@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { parse } = require('connection-string');
+const { URL } = require('url');
 
 // Database connection manager for national scale
 class DatabaseManager {
@@ -17,8 +17,8 @@ class DatabaseManager {
 
     // Initialize write client (primary database)
     try {
-      const parsed = parse(databaseUrl);
-      if (!parsed.protocol || !parsed.host) throw new Error('Malformed database URL');
+      const parsed = new URL(databaseUrl);
+      if (!parsed.protocol || !parsed.hostname) throw new Error('Malformed database URL');
     } catch (e) {
       console.error('❌ Database URL parsing failure:', e.message);
       throw new Error(`Invalid DATABASE_URL substrate: ${e.message}`);

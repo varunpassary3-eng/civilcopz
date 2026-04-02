@@ -125,6 +125,22 @@ const errorLogger = (err, req, res, next) => {
 
 // Security event logger
 const securityLogger = {
+  error: (message, data = {}) => {
+    logger.error({
+      type: 'security',
+      message,
+      ...data
+    }, 'Security error');
+  },
+
+  warn: (message, data = {}) => {
+    logger.warn({
+      type: 'security',
+      message,
+      ...data
+    }, 'Security warning');
+  },
+
   logSuspiciousActivity: (event) => {
     logger.warn({
       type: 'security',
