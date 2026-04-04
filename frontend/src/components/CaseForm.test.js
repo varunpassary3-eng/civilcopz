@@ -1,58 +1,80 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import CaseForm from './CaseForm.vue';
 
-// Mock the API
-vi.mock('../services/api', () => ({
-  createCase: vi.fn(),
+const { push, createCaseWithSync } = vi.hoisted(() => ({
+  push: vi.fn(),
+  createCaseWithSync: vi.fn(),
 }));
 
-vi.mock('../services/ai', () => ({
-  classifyCase: vi.fn(),
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push }),
 }));
 
-import { createCase } from '../services/api';
-import { classifyCase } from '../services/ai';
+vi.mock('../services/caseService', () => ({
+  createCaseWithSync,
+}));
 
 describe('CaseForm', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders form fields', () => {
     const wrapper = mount(CaseForm);
-    expect(wrapper.find('input[required]').exists()).toBe(true);
+    expect(wrapper.find('form').exists()).toBe(true);
     expect(wrapper.find('textarea').exists()).toBe(true);
-    expect(wrapper.find('select').exists()).toBe(true);
+    expect(wrapper.findAll('select')).toHaveLength(2);
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(true);
   });
 
   it('submits case successfully', async () => {
-    createCase.mockResolvedValue({ id: '1' });
+    createCaseWithSync.mockResolvedValue({ id: '1' });
 
     const wrapper = mount(CaseForm);
-    await wrapper.find('input[required]').setValue('Test Title');
+    await wrapper.find('input[placeholder="e.g., Defective Electronic Hardware"]').setValue('Test Title');
+    await wrapper.find('input[placeholder="Company Name"]').setValue('Test Company');
     await wrapper.find('textarea').setValue('Test Description');
-    await wrapper.find('input[type="text"]').setValue('Test Company');
+    await wrapper.find('#disclaimer-consent').setValue(true);
 
     await wrapper.find('form').trigger('submit.prevent');
+    await Promise.resolve();
+    await nextTick();
 
-    expect(createCase).toHaveBeenCalledWith({
+    expect(createCaseWithSync).toHaveBeenCalledWith({
       title: 'Test Title',
       description: 'Test Description',
       company: 'Test Company',
-      category: 'Telecom',
+      category: 'Other',
       jurisdiction: 'District',
       file: null,
     });
+
+    expect(wrapper.text()).toContain('Grievance logged in local engine');
+
+    await vi.runAllTimersAsync();
+    expect(push).toHaveBeenCalledWith('/cases');
   });
 
-  it('classifies case with AI', async () => {
-    classifyCase.mockResolvedValue({
-      category: 'Banking',
-      severity: 'High',
-      suggestion: 'File with RBI',
-    });
+  it('shows an error hint when submission fails', async () => {
+    createCaseWithSync.mockRejectedValue(new Error('Submission failed'));
 
     const wrapper = mount(CaseForm);
-    await wrapper.find('textarea').setValue('Bank issue');
-    await wrapper.find('button').trigger('click');
+    await wrapper.find('input[placeholder="e.g., Defective Electronic Hardware"]').setValue('Test Title');
+    await wrapper.find('input[placeholder="Company Name"]').setValue('Test Company');
+    await wrapper.find('textarea').setValue('Test Description');
+    await wrapper.find('#disclaimer-consent').setValue(true);
+    await wrapper.find('form').trigger('submit.prevent');
+    await Promise.resolve();
+    await nextTick();
 
-    expect(classifyCase).toHaveBeenCalledWith('Bank issue');
+    expect(wrapper.text()).toContain('Execution failure');
+    expect(push).not.toHaveBeenCalled();
   });
 });
