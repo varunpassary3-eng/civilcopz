@@ -18,13 +18,17 @@ class CacheService {
   }
 
   async initializeRedis() {
-    const redisUrl = process.env.REDIS_URL || `redis://127.0.0.1:6379`;
+    const redisHost = process.env.REDIS_HOST || '127.0.0.1';
+    const redisPort = process.env.REDIS_PORT || 6379;
     const redisPassword = process.env.REDIS_PASSWORD;
+
+    const redisUrl = redisPassword
+      ? `redis://:${redisPassword}@${redisHost}:${redisPort}`
+      : `redis://${redisHost}:${redisPort}`;
 
     try {
       this.redisClient = createClient({
         url: redisUrl,
-        password: redisPassword,
         socket: {
           connectTimeout: 5000,
           lazyConnect: true,
@@ -50,6 +54,14 @@ class CacheService {
       });
 
     } catch (error) {
+      console.error('❌ Redis connection failed with details:', {
+        host: redisHost,
+        port: redisPort,
+        password: redisPassword ? '[REDACTED]' : undefined,
+        error: error.message,
+        code: error.code,
+        errno: error.errno
+      });
       console.warn('⚠️ Redis cache not available, using memory cache only:', error.message);
       this.isRedisConnected = false;
     }
