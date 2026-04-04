@@ -13,6 +13,9 @@
     "install-all": "npm install && npm run rw-install && npm run rw-setup",
     "rw-install": "npm --workspace backend install && npm --workspace frontend install"
   },
+  "overrides": {
+    "lodash": "^4.18.1"
+  },
   "devDependencies": {
     "concurrently": "^8.2.0"
   }
