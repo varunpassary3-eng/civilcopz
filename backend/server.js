@@ -14,54 +14,76 @@ const monitoringService = require('./services/monitoringService');
 const cacheService = require('./services/cacheService');
 const { requestLogger, performanceLogger, errorLogger, securityLogger } = require('./services/loggingService');
 const aiQueue = require('./queue/aiQueue');
+const { verifyToken, authorize } = require('./middleware/auth');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const APP_PORT = process.env.PORT || 4000;
 
-// Initialize national scale services
+app.use(express.json());
+
 async function initializeServices() {
   try {
-    console.log('🚀 Initializing national scale services...');
-
-    // Initialize database manager
+    console.log('Initializing national scale services...');
     await dbManager.initialize();
-
-    // Seed initial advisory services (Legal Aid/Advisory)
     await adService.seedInitialServices();
-
-    // Start monitoring service
     monitoringService.startPeriodicUpdates(aiQueue);
-
-    console.log('✅ All services initialized successfully');
+    console.log('All services initialized successfully');
   } catch (error) {
-    console.error('❌ Service initialization failed:', error);
+    console.error('Service initialization failed:', error);
     process.exit(1);
   }
 }
 
-// Security middleware
+async function checkDB() {
+  try {
+    if (!dbManager.isInitialized) {
+      return false;
+    }
+
+    await dbManager.getReadClient().$queryRaw`SELECT 1`;
+    return true;
+  } catch (error) {
+    console.error('Health DB check failed:', error);
+    return false;
+  }
+}
+
+async function checkRedis() {
+  try {
+    if (!cacheService.isRedisConnected) {
+      await cacheService.initializeRedis();
+    }
+
+    if (!cacheService.redisClient) {
+      return false;
+    }
+
+    const ping = await cacheService.redisClient.ping();
+    return ping === 'PONG';
+  } catch (error) {
+    console.error('Health Redis check failed:', error);
+    return false;
+  }
+}
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      imgSrc: ["'self'", 'data:', 'https:'],
     },
   },
 }));
 
-// Request monitoring middleware (must be before other middleware)
 app.use(monitoringService.getRequestMonitoringMiddleware());
-
-// Structured logging middleware
 app.use(requestLogger);
 app.use(performanceLogger);
 
-// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 100,
   message: { error: 'Too many requests from this IP, please try again later.' },
   standardHeaders: true,
@@ -69,23 +91,21 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// API rate limiting (stricter for auth endpoints)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Increased slightly for usability but still strict
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: { error: 'Too many authentication attempts, please try again later.' },
 });
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/register', authLimiter);
 
-// CORS configuration - Strict production whitelist
-const allowedOrigins = process.env.CORS_ORIGIN 
-  ? process.env.CORS_ORIGIN.split(',') 
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',')
   : ['http://localhost:5173', 'http://localhost:8080'];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       securityLogger.warn(`[CORS_BLOCKED] Origin: ${origin}`);
@@ -95,20 +115,69 @@ app.use(cors({
   credentials: true,
 }));
 
-// Route registration
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/users', userRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/ads', adRoutes);
 app.use('/api', healthRoutes);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  const health = monitoringService.getHealthStatus();
-  res.status(health.status === 'healthy' ? 200 : 503).json(health);
+app.post('/api/certificates/generate', verifyToken, authorize(['admin', 'ADVOCATE']), async (req, res) => {
+  const prisma = dbManager.getWriteClient();
+  const { caseId } = req.body || {};
+
+  if (!caseId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation error',
+    });
+  }
+
+  const caseData = await prisma.case.findUnique({ where: { id: caseId } });
+  if (!caseData) {
+    return res.status(404).json({
+      success: false,
+      error: 'Case not found',
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Certificate generation placeholder response',
+  });
 });
 
-// Metrics endpoint for Prometheus
+app.get('/api/certificates', verifyToken, (req, res) => {
+  res.json({
+    success: true,
+    certificates: [],
+  });
+});
+
+app.get('/health', async (req, res) => {
+  const dbOk = await checkDB();
+  const redisOk = await checkRedis();
+
+  if (dbOk && redisOk) {
+    return res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      services: {
+        database: 'connected',
+        redis: 'connected',
+      },
+    });
+  }
+
+  return res.status(500).json({
+    status: 'fail',
+    timestamp: new Date().toISOString(),
+    services: {
+      database: dbOk ? 'connected' : 'disconnected',
+      redis: redisOk ? 'connected' : 'disconnected',
+    },
+  });
+});
+
 app.get('/metrics', async (req, res) => {
   try {
     const metrics = await monitoringService.getMetrics();
@@ -120,50 +189,55 @@ app.get('/metrics', async (req, res) => {
   }
 });
 
-// Error logging middleware
 app.use(errorLogger);
 
-// Global Error Handler
 app.use((err, req, res, next) => {
   const statusCode = err.status || 500;
-  
-  // Security logging for severe errors
+
   if (statusCode >= 500) {
     securityLogger.error(`[SERVER_ERROR] ${req.method} ${req.url}`, {
       message: err.message,
       stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-      ip: req.ip
+      ip: req.ip,
     });
   }
 
   return res.status(statusCode).json({
     success: false,
     error: statusCode === 500 ? 'Internal Server Error' : err.message,
-    message: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred.'
+    message: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred.',
   });
 });
 
-const APP_PORT = process.env.PORT || 4000;
+async function startServer() {
+  await initializeServices();
 
-// Check if running in worker mode
-if (process.env.WORKER_MODE === 'ai') {
-  console.log('🚀 Starting AI Worker Substrate...');
-  require('./workers/aiWorker');
-} else {
-  // Initialize services and start the web server
-  initializeServices().then(() => {
-    app.listen(APP_PORT, () => {
-      console.log(`✅ CivilCOPZ backend running on http://localhost:${APP_PORT}`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  app.listen(APP_PORT, () => {
+    console.log(`CivilCOPZ backend running on http://localhost:${APP_PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 
-      // Start AI worker in background if not in worker-only mode
-      if (process.env.NODE_ENV === 'production' || process.env.START_WORKER === 'true') {
-        console.log('🤖 Starting AI Worker in background...');
-        require('./workers/aiWorker');
-      }
-    });
-  }).catch((error) => {
-    securityLogger.error('[APP_INIT_FAILURE]', error);
-    process.exit(1);
+    if (process.env.NODE_ENV === 'production' || process.env.START_WORKER === 'true') {
+      console.log('Starting AI worker in background...');
+      require('./workers/aiWorker');
+    }
   });
 }
+
+if (require.main === module) {
+  if (process.env.WORKER_MODE === 'ai') {
+    console.log('Starting AI worker substrate...');
+    require('./workers/aiWorker');
+  } else {
+    startServer().catch((error) => {
+      securityLogger.error('[APP_INIT_FAILURE]', error);
+      process.exit(1);
+    });
+  }
+}
+
+module.exports = {
+  app,
+  initializeServices,
+  dbManager,
+  cacheService,
+};
