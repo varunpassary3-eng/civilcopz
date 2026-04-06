@@ -1,3 +1,4 @@
+const auditLedgerService = require('../services/auditLedgerService');
 const legalCompliance = require('../services/legalComplianceService');
 
 module.exports = function audit(action) {
@@ -26,13 +27,39 @@ module.exports = function audit(action) {
       statusCode = res.statusCode;
 
       try {
-        // Create immutable audit log entry
+        const userId = req.user?.id || "anonymous";
+        const userRole = req.user?.role || "unknown";
+        const resourceId = req.params?.id || req.body?.id || "unknown";
+
+        // Create comprehensive audit trail entry
+        await auditLedgerService.createAuditEntry(
+          'API_REQUEST',
+          `${req.method} ${req.originalUrl}`,
+          action,
+          null, // oldValues - not applicable for requests
+          {
+            method: req.method,
+            path: req.originalUrl,
+            query: req.query,
+            requestBody: req.method !== 'GET' ? legalCompliance.maskSensitiveData(JSON.stringify(req.body)) : null,
+            responseStatus: statusCode,
+            responseSize: responseData ? Buffer.byteLength(JSON.stringify(responseData)) : 0,
+            duration: Date.now() - (req.startTime || Date.now())
+          },
+          userId,
+          userRole,
+          req.ip || req.connection.remoteAddress,
+          req.get('User-Agent'),
+          req.sessionID || 'no-session'
+        );
+
+        // Create legacy legal compliance audit log for backward compatibility
         await legalCompliance.createAuditLog({
           action: action,
-          userId: req.user?.id || "anonymous",
-          userRole: req.user?.role || "unknown",
+          userId: userId,
+          userRole: userRole,
           resource: "case",
-          resourceId: req.params?.id || req.body?.id || "unknown",
+          resourceId: resourceId,
           changes: {
             method: req.method,
             path: req.originalUrl,
@@ -45,7 +72,7 @@ module.exports = function audit(action) {
           sessionId: req.sessionID || 'no-session'
         });
       } catch (error) {
-        console.error('Legal compliance audit logging failed:', error);
+        console.error('Audit logging failed:', error);
         // Continue execution even if audit logging fails
       }
     });

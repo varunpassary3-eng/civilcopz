@@ -1,0 +1,44 @@
+steps:
+  # Build Backend Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/civilcopz/backend:$COMMIT_SHA', './backend']
+
+  # Push Backend Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/civilcopz/backend:$COMMIT_SHA']
+
+  # Push AI Worker Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/civilcopz/ai-worker:$COMMIT_SHA']
+
+  # Phase 1-3: Unified Orchestration (Deploy -> Validate -> Chaos -> Promotion/Rollback)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'run-orchestration'
+    entrypoint: 'node'
+    args: ['scripts/gcp/orchestrator.js']
+    env:
+      - 'STAGING_PROJECT_ID=$PROJECT_ID'
+      - 'STAGING_REGION=us-central1'
+      - 'STAGING_VPC_NETWORK=${_VPC_NETWORK}'
+      - 'STAGING_VPC_SUBNET=${_VPC_SUBNET}'
+      - 'STAGING_CLOUD_SQL_PRIVATE_IP=${_DB_HOST}'
+      - 'STAGING_REDIS_PRIVATE_IP=${_REDIS_HOST}'
+      - 'STAGING_BUCKET_NAME=${_STAGING_BUCKET}'
+      - 'IMAGE_TAG=$COMMIT_SHA'
+      - 'OPENAI_API_KEY=OPENAI_API_KEY' # Secret placeholder for script to fetch
+
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/civilcopz/backend:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/civilcopz/ai-worker:$COMMIT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/civilcopz/frontend:$COMMIT_SHA'
+
+substitutions:
+  _DB_HOST: '10.0.0.10'
+  _REDIS_HOST: '10.0.0.20'
+  _VPC_NETWORK: 'civilcopz-network'
+  _VPC_SUBNET: 'civilcopz-subnet'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'

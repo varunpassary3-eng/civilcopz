@@ -1,0 +1,16 @@
+admissionWhitelistPatterns:
+- namePattern: "gcr.io/google-containers/*"
+- namePattern: "us-central1-docker.pkg.dev/YOUR_PROJECT_ID/civilcopz/*"
+
+defaultAdmissionRule:
+  evaluationMode: REQUIRE_ATTESTATION
+  enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
+  requireAttestationsBy:
+  - projects/YOUR_PROJECT_ID/attestors/civilcopz-attestor
+
+clusterAdmissionRules:
+  us-central1:
+    evaluationMode: REQUIRE_ATTESTATION
+    enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
+    requireAttestationsBy:
+    - projects/YOUR_PROJECT_ID/attestors/civilcopz-attestor

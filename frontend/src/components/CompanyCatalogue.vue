@@ -8,23 +8,33 @@
       
       <div class="relative z-10 space-y-4">
         <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-red-500/10 border border-red-500/20 rounded-full">
-          <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+          <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
           <span class="text-[10px] font-black uppercase text-red-500 tracking-[0.2em]">Live Intelligence Feed</span>
         </div>
         
-        <h2 class="text-5xl font-black tracking-tighter text-white leading-none">THE INDUSTRY<br/><span class="text-gov-primary-400">HALL OF SHAME</span></h2>
+        <h2 class="text-5xl font-black tracking-tighter text-white leading-none">
+          THE INDUSTRY<br><span class="text-gov-primary-400">HALL OF SHAME</span>
+        </h2>
         <p class="max-w-xl text-slate-400 text-sm font-medium leading-relaxed">
           The CivilCOPZ "Name & Shame" intelligence report. A formula-driven ranking of companies based on public consumer grievances and court order history.
         </p>
 
         <div class="flex gap-4 pt-4">
           <div class="p-4 bg-white/5 border border-white/10 rounded-2xl">
-            <p class="text-[10px] font-black uppercase text-slate-500 mb-1">Total Tracked</p>
-            <p class="text-2xl font-black text-white">{{ stats.trackedCompanies }} Companies</p>
+            <p class="text-[10px] font-black uppercase text-slate-500 mb-1">
+              Total Tracked
+            </p>
+            <p class="text-2xl font-black text-white">
+              {{ stats.trackedCompanies }} Companies
+            </p>
           </div>
           <div class="p-4 bg-white/5 border border-white/10 rounded-2xl">
-            <p class="text-[10px] font-black uppercase text-slate-500 mb-1">Live Grievances</p>
-            <p class="text-2xl font-black text-white">{{ stats.totalGrievanceCount }} Records</p>
+            <p class="text-[10px] font-black uppercase text-slate-500 mb-1">
+              Live Grievances
+            </p>
+            <p class="text-2xl font-black text-white">
+              {{ stats.totalGrievanceCount }} Records
+            </p>
           </div>
         </div>
       </div>
@@ -33,7 +43,9 @@
     <!-- Top Hall of Shame (Top Offenders) -->
     <section class="space-y-6">
       <div class="flex items-center justify-between px-2">
-        <h3 class="text-xl font-black uppercase tracking-tighter">🚨 Primary Risk Alerts</h3>
+        <h3 class="text-xl font-black uppercase tracking-tighter">
+          🚨 Primary Risk Alerts
+        </h3>
         <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Sorted by impact volume</span>
       </div>
 
@@ -50,19 +62,31 @@
           
           <div class="space-y-4">
             <div>
-              <p class="text-[9px] font-black uppercase text-red-500 tracking-widest mb-1">{{ company.shameStatus }}</p>
-              <h4 class="text-2xl font-black tracking-tight group-hover:text-gov-primary-600 transition-colors">{{ company.name }}</h4>
+              <p class="text-[9px] font-black uppercase text-red-500 tracking-widest mb-1">
+                {{ company.shameStatus }}
+              </p>
+              <h4 class="text-2xl font-black tracking-tight group-hover:text-gov-primary-600 transition-colors">
+                {{ company.name }}
+              </h4>
             </div>
 
             <div class="flex items-center gap-6">
               <div>
-                <p class="text-[9px] font-black uppercase text-slate-400 mb-0.5">Complaints</p>
-                <p class="text-lg font-black">{{ company.totalComplaints }}</p>
+                <p class="text-[9px] font-black uppercase text-slate-400 mb-0.5">
+                  Complaints
+                </p>
+                <p class="text-lg font-black">
+                  {{ company.totalComplaints }}
+                </p>
               </div>
-              <div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-800"></div>
+              <div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-800" />
               <div>
-                <p class="text-[9px] font-black uppercase text-slate-400 mb-0.5">Trend</p>
-                <p class="text-lg font-black text-red-500">↑ {{ company.trend }}</p>
+                <p class="text-[9px] font-black uppercase text-slate-400 mb-0.5">
+                  Trend
+                </p>
+                <p class="text-lg font-black text-red-500">
+                  ↑ {{ company.trend }}
+                </p>
               </div>
             </div>
 
@@ -77,23 +101,29 @@
     <!-- News Style Shoutout / Ticker -->
     <section class="bg-red-600 text-white p-4 rounded-2xl overflow-hidden shadow-glow-indigo">
       <div class="flex items-center gap-8 whitespace-nowrap animate-marquee">
-          <span v-for="n in 10" :key="n" class="flex items-center gap-4 text-xs font-black uppercase tracking-widest">
-            <span class="w-2 h-2 bg-white rounded-full"></span>
-            URGENCY: {{ topOffenders[0]?.name }} REPORTED AGAIN IN {{ topOffenders[0]?.category }}
-          </span>
+        <span
+          v-for="n in 10"
+          :key="n"
+          class="flex items-center gap-4 text-xs font-black uppercase tracking-widest"
+        >
+          <span class="w-2 h-2 bg-white rounded-full" />
+          URGENCY: {{ topOffenders[0]?.name }} REPORTED AGAIN IN {{ topOffenders[0]?.category }}
+        </span>
       </div>
     </section>
 
     <!-- Full Catalogue List -->
     <section class="space-y-8">
       <div class="flex items-center justify-between">
-        <h3 class="text-xl font-black uppercase tracking-tighter">Full Consumer Intelligence Catalog</h3>
+        <h3 class="text-xl font-black uppercase tracking-tighter">
+          Full Consumer Intelligence Catalog
+        </h3>
         <div class="flex gap-4">
-           <input 
+          <input 
             v-model="search"
             placeholder="Search company database..."
             class="bg-white/50 dark:bg-gov-dark-900/50 border border-slate-200 dark:border-gov-dark-800 p-2.5 px-6 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-gov-primary-600 w-64"
-           />
+          >
         </div>
       </div>
 
@@ -101,27 +131,50 @@
         <table class="w-full border-collapse">
           <thead>
             <tr class="bg-slate-50 dark:bg-gov-dark-800/50">
-              <th class="px-8 py-6 text-left text-[10px] font-black uppercase text-slate-400 tracking-widest">Entity Name</th>
-              <th class="px-8 py-6 text-left text-[10px] font-black uppercase text-slate-400 tracking-widest">Sector</th>
-              <th class="px-8 py-6 text-left text-[10px] font-black uppercase text-slate-400 tracking-widest">Volume</th>
-              <th class="px-8 py-6 text-left text-[10px] font-black uppercase text-slate-400 tracking-widest">Risk Level</th>
-              <th class="px-8 py-6 text-right text-[10px] font-black uppercase text-slate-400 tracking-widest">Action</th>
+              <th class="px-8 py-6 text-left text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                Entity Name
+              </th>
+              <th class="px-8 py-6 text-left text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                Sector
+              </th>
+              <th class="px-8 py-6 text-left text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                Volume
+              </th>
+              <th class="px-8 py-6 text-left text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                Risk Level
+              </th>
+              <th class="px-8 py-6 text-right text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                Action
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-gov-dark-800">
-            <tr v-for="company in catalog" :key="company.id" class="hover:bg-slate-50 dark:hover:bg-gov-dark-800/20 transition-all">
-              <td class="px-8 py-6 font-black text-sm">{{ company.name }}</td>
+            <tr
+              v-for="company in catalog"
+              :key="company.id"
+              class="hover:bg-slate-50 dark:hover:bg-gov-dark-800/20 transition-all"
+            >
+              <td class="px-8 py-6 font-black text-sm">
+                {{ company.name }}
+              </td>
               <td class="px-8 py-6">
                 <span class="text-[9px] font-black uppercase px-2 py-1 bg-slate-100 dark:bg-gov-dark-950 rounded-lg text-slate-500">{{ company.category }}</span>
               </td>
-              <td class="px-8 py-6 font-black text-sm text-slate-700 dark:text-slate-300">{{ company.totalComplaints }} Cases</td>
+              <td class="px-8 py-6 font-black text-sm text-slate-700 dark:text-slate-300">
+                {{ company.totalComplaints }} Cases
+              </td>
               <td class="px-8 py-6">
-                <span class="text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-sm" :class="getRiskClass(company.shameStatus)">
+                <span
+                  class="text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-sm"
+                  :class="getRiskClass(company.shameStatus)"
+                >
                   {{ company.shameStatus }}
                 </span>
               </td>
               <td class="px-8 py-6 text-right">
-                <button class="text-gov-primary-600 font-black text-[10px] uppercase hover:underline">Full Report</button>
+                <button class="text-gov-primary-600 font-black text-[10px] uppercase hover:underline">
+                  Full Report
+                </button>
               </td>
             </tr>
           </tbody>
@@ -131,7 +184,9 @@
 
     <!-- Strict Legal Disclaimer Footer (Local to this sensitive page) -->
     <div class="p-8 border-2 border-slate-200 dark:border-gov-dark-800 rounded-3xl bg-slate-50 dark:bg-gov-dark-950/40">
-      <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Legal Disclaimer & Data Sourcing Protocol</p>
+      <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">
+        Legal Disclaimer & Data Sourcing Protocol
+      </p>
       <p class="text-xs text-slate-600 dark:text-slate-500 leading-relaxed italic">
         "All information are backed and sourced from respective legal courts and public and are system generated formula driven and no human intervention and any updation and adjustment happens only on court orders."
       </p>

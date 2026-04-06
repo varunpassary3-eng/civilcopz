@@ -1,0 +1,37 @@
+{
+  "districtCase": {
+    "title": "Defective Laptop",
+    "description": "The laptop has a faulty battery that drains completely in 15 minutes.",
+    "company": "Escalation Corp",
+    "category": "E-Commerce",
+    "jurisdiction": "District",
+    "considerationPaid": 50000,
+    "expectedCompensationClient": 100000,
+    "consumerName": "Ravi Kumar",
+    "consumerEmail": "ravi@example.com",
+    "consumerPhone": "9876543210",
+    "consumerAddress": "H.No 123, Sector 15, Rohini, New Delhi",
+    "isDeclaredTrue": true,
+    "declaredName": "Ravi Kumar"
+  },
+  "nationalCase": {
+    "title": "Real Estate Fraud",
+    "description": "Total non-delivery of possession after 10 years of booking high-end luxury villa.",
+    "company": "Supreme Builders Ltd",
+    "category": "Other",
+    "jurisdiction": "National",
+    "considerationPaid": 30000000,
+    "expectedCompensationClient": 15000000,
+    "consumerName": "Vikram Singh",
+    "consumerEmail": "vikram@example.com",
+    "consumerPhone": "9000000000",
+    "consumerAddress": "Penthouse A, Skyline Towers, Mumbai",
+    "isDeclaredTrue": true,
+    "declaredName": "Vikram Singh"
+  },
+  "expiredCaseTemplate": {
+    "status": "Notice_Sent",
+    "noticeStatus": "SENT",
+    "noticeDeadline": "2026-03-20T00:00:00Z"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "consumer": {
+    "name": "Ravi Kumar",
+    "address": "Delhi, India",
+    "phone": "9999999999"
+  },
+  "company": {
+    "name": "ABC Electronics Pvt Ltd"
+  },
+  "claim": {
+    "considerationPaid": 50000,
+    "compensationClaimed": 100000
+  },
+  "evidence": [
+    {
+      "type": "invoice",
+      "file": "invoice.pdf"
+    },
+    {
+      "type": "email",
+      "file": "email.pdf"
+    }
+  ]
+}

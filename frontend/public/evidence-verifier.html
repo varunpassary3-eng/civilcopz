@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivilCOPZ Evidence Verifier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .file-input {
+            border: 2px dashed #e1e5e9;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .file-input:hover {
+            border-color: #667eea;
+        }
+
+        .file-input.dragover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .hash-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        #calculatedHash {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">⚖️ CivilCOPZ</div>
+            <div class="subtitle">Independent Evidence Verification Tool</div>
+        </div>
+
+        <form id="verificationForm">
+            <div class="form-group">
+                <label for="fileInput">Upload Evidence File</label>
+                <div class="file-input" id="fileDropZone">
+                    <div id="fileDisplay">Click to select file or drag and drop here</div>
+                    <input type="file" id="fileInput" accept="*/*">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="expectedHash">Expected SHA-256 Hash</label>
+                <input type="text" id="expectedHash" placeholder="Enter the expected hash value from CivilCOPZ">
+            </div>
+
+            <button type="submit" class="btn" id="verifyBtn">
+                <span id="btnText">Verify Evidence</span>
+            </button>
+        </form>
+
+        <div id="result" class="result">
+            <h3 id="resultTitle"></h3>
+            <p id="resultMessage"></p>
+            <div id="calculatedHash" class="hash-display"></div>
+        </div>
+
+        <div class="footer">
+            <p>This tool independently verifies evidence integrity without accessing CivilCOPZ systems.</p>
+            <p>For court admissibility, use the official CivilCOPZ platform to generate evidence packages.</p>
+        </div>
+    </div>
+
+    <script>
+        class EvidenceVerifier {
+            constructor() {
+                this.selectedFile = null;
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                const fileInput = document.getElementById('fileInput');
+                const fileDropZone = document.getElementById('fileDropZone');
+                const form = document.getElementById('verificationForm');
+
+                // File input change
+                fileInput.addEventListener('change', (e) => {
+                    this.handleFileSelect(e.target.files[0]);
+                });
+
+                // Drag and drop
+                fileDropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    fileDropZone.classList.add('dragover');
+                });
+
+                fileDropZone.addEventListener('dragleave', () => {
+                    fileDropZone.classList.remove('dragover');
+                });
+
+                fileDropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    fileDropZone.classList.remove('dragover');
+                    this.handleFileSelect(e.dataTransfer.files[0]);
+                });
+
+                // Click to select
+                fileDropZone.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                // Form submission
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.verifyEvidence();
+                });
+            }
+
+            handleFileSelect(file) {
+                if (file) {
+                    this.selectedFile = file;
+                    document.getElementById('fileDisplay').textContent = `Selected: ${file.name} (${this.formatFileSize(file.size)})`;
+                }
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            async calculateSHA256(file) {
+                const buffer = await file.arrayBuffer();
+                const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+
+            async verifyEvidence() {
+                const expectedHash = document.getElementById('expectedHash').value.trim().toLowerCase();
+                const resultDiv = document.getElementById('result');
+                const resultTitle = document.getElementById('resultTitle');
+                const resultMessage = document.getElementById('resultMessage');
+                const calculatedHashDiv = document.getElementById('calculatedHash');
+                const verifyBtn = document.getElementById('verifyBtn');
+                const btnText = document.getElementById('btnText');
+
+                if (!this.selectedFile) {
+                    this.showResult('error', 'No File Selected', 'Please select a file to verify.');
+                    return;
+                }
+
+                if (!expectedHash) {
+                    this.showResult('error', 'Missing Hash', 'Please enter the expected SHA-256 hash.');
+                    return;
+                }
+
+                if (!/^[a-f0-9]{64}$/i.test(expectedHash)) {
+                    this.showResult('error', 'Invalid Hash Format', 'SHA-256 hash must be 64 hexadecimal characters.');
+                    return;
+                }
+
+                // Show loading state
+                verifyBtn.disabled = true;
+                btnText.innerHTML = '<div class="loading"></div>Verifying...';
+
+                try {
+                    const calculatedHash = await this.calculateSHA256(this.selectedFile);
+
+                    calculatedHashDiv.textContent = calculatedHash;
+                    calculatedHashDiv.style.display = 'block';
+
+                    if (calculatedHash.toLowerCase() === expectedHash) {
+                        this.showResult('success', '✅ Evidence Verified',
+                            `The file integrity is confirmed. The calculated hash matches the expected hash.`);
+                    } else {
+                        this.showResult('error', '❌ Evidence Tampered',
+                            `The calculated hash does not match the expected hash. The evidence may have been altered.`);
+                    }
+
+                } catch (error) {
+                    this.showResult('error', 'Verification Failed',
+                        `An error occurred during verification: ${error.message}`);
+                } finally {
+                    verifyBtn.disabled = false;
+                    btnText.textContent = 'Verify Evidence';
+                }
+            }
+
+            showResult(type, title, message) {
+                const resultDiv = document.getElementById('result');
+                const resultTitle = document.getElementById('resultTitle');
+                const resultMessage = document.getElementById('resultMessage');
+
+                resultDiv.className = `result ${type}`;
+                resultDiv.style.display = 'block';
+                resultTitle.textContent = title;
+                resultMessage.textContent = message;
+
+                // Scroll to result
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Initialize verifier when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new EvidenceVerifier();
+        });
+
+        // Add some security headers simulation
+        if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+            console.warn('For production use, this tool should be served over HTTPS');
+        }
+    </script>
+</body>
+</html>

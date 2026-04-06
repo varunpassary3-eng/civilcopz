@@ -1,5 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const dbManager = require('../services/databaseManager');
+
+const getPrisma = () => dbManager.getReadClient();
 
 async function getCompanyCatalogue(req, res) {
   try {
@@ -9,7 +10,7 @@ async function getCompanyCatalogue(req, res) {
     if (category) where.category = category;
     if (search) where.name = { contains: search, mode: 'insensitive' };
 
-    const companies = await prisma.company.findMany({
+    const companies = await getPrisma().company.findMany({
       where,
       orderBy: { totalCases: 'desc' },
       take: parseInt(limit),
@@ -46,13 +47,13 @@ async function getCompanyCatalogue(req, res) {
 
 async function getCompanyStatsSummary(req, res) {
   try {
-    const topOffenders = await prisma.company.findMany({
+    const topOffenders = await getPrisma().company.findMany({
       orderBy: { totalCases: 'desc' },
       take: 5
     });
 
-    const totalTrackedCompanies = await prisma.company.count();
-    const totalGrievances = await prisma.case.count();
+    const totalTrackedCompanies = await getPrisma().company.count();
+    const totalGrievances = await getPrisma().case.count();
 
     return res.json({
       success: true,

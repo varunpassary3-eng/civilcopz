@@ -1,32 +1,60 @@
-# Backend Dockerfile
-FROM node:18-alpine
+# --- Stage 1: Build & Prepare ---
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Install curl for health checks and OpenSSL for Prisma
-RUN apk add --no-cache curl openssl ca-certificates
+# Install system dependencies for Prisma/Node
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends openssl ca-certificates curl python3 make g++ && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy package files
+# Monorepo Workspace Metadata: Required for npm dependency resolution
 COPY package*.json ./
+COPY backend/package*.json ./backend/
+COPY frontend/package*.json ./frontend/
+COPY backend/prisma ./backend/prisma/
 
-# Install dependencies - Use 'npm install' to generate/handle missing lockfiles during stabilization
-RUN npm install --only=production
+# Substrate Diagnostics: Ensure Prisma engine compatibility
+ENV PRISMA_CLI_BINARY_TARGETS="debian-openssl-3.0.x"
 
-# Copy source code
-COPY . .
+# Install dependencies
+RUN npm install --workspace backend --verbose
 
-# Generate Prisma Client
-RUN npx prisma generate
+# Authoritative Source Copy (v10 HARDENING)
+COPY backend ./backend/
 
-# Create necessary directories
-RUN mkdir -p uploads logs
+# Generate Prisma client with full schema context
+RUN npx prisma generate --schema=./backend/prisma/schema.prisma
 
-# Expose port
+# --- Stage 2: Production Runtime ---
+FROM node:20-slim AS runner
+
+WORKDIR /app
+
+# Infrastructure Defaults
+ENV NODE_ENV=production
+ENV PORT=4000
+ENV PRISMA_CLIENT_ENGINE_TYPE="binary"
+LABEL version="v4.2-hardened"
+
+# Install runtime substrate (OpenSSL for Prisma + CA certs for GCP/Vault/AWS)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends openssl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create authoritative non-root user
+RUN groupadd -r civilcopz && useradd -r -g civilcopz civilcopz
+
+# Copy only built application and production dependencies from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/backend ./backend/
+
+# Permissions hardening
+RUN chown -R civilcopz:civilcopz /app
+
+USER civilcopz
+
 EXPOSE 4000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:4000/api/health || exit 1
-
-# Default command - can be overridden
-CMD ["node", "server.js"]
+# Sovereign Boot: Config is loaded from AWS Secrets Manager at startup
+CMD ["node", "backend/server.js"]

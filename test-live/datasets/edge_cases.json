@@ -1,0 +1,12 @@
+{
+  "simulations": [
+    {
+      "type": "duplicate_esign",
+      "caseId": "edge456"
+    },
+    {
+      "type": "malformed_s3",
+      "caseId": "edge789"
+    }
+  ]
+}

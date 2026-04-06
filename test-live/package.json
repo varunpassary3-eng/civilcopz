@@ -1,0 +1,7 @@
+{
+  "name": "civilcopz-cltm",
+  "version": "1.0.0",
+  "description": "CivilCOPZ Live Test Module",
+  "type": "module",
+  "private": true
+}

@@ -4,5 +4,12 @@ backend/node_modules/
 .env
 .env.local
 .env.*.local
+.env.prod
+.env.prod.local
 .DS_Store
 /uploads/
+*.log
+logs/
+tmp/
+test-live/reports/
+

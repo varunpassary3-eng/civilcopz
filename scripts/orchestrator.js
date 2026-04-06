@@ -1,200 +1,110 @@
-const { spawn, execSync } = require('child_process');
 const path = require('path');
+const { spawn, execSync, exec } = require('child_process');
 const fs = require('fs');
-
-/**
- * CivilCOPZ Orchestrator Utility
- * Purpose: Provide a unified interface for environment audit, 
- * database setup, and concurrent service monitoring.
- */
+const { ensurePort3000 } = require('./orchestrator/portGuard');
 
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  red: '\x1b[31m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m'
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  cyan: "\x1b[36m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  red: "\x1b[31m",
+  magenta: "\x1b[35m"
 };
 
-const services = [];
+const appCwd = fs.existsSync(path.join(__dirname, '../app')) 
+  ? path.join(__dirname, '../app') 
+  : path.join(__dirname, '../frontend');
 
-function log(service, message, color = colors.reset) {
-  const timestamp = new Date().toLocaleTimeString();
-  console.log(`${color}[${timestamp}] [${service}] ${message}${colors.reset}`);
-}
-
-/**
- * Phase 1: Environment Audit & Provisioning
- */
-function auditEnvironment() {
-  log('ORCHESTRATOR', 'Auditing environment configuration...', colors.cyan);
-  const backendDir = path.join(__dirname, '../backend');
-  const envPath = path.join(backendDir, '.env');
-  const envExamplePath = path.join(__dirname, '../.env.example');
-
-  if (!fs.existsSync(envPath)) {
-    if (fs.existsSync(envExamplePath)) {
-      log('ORCHESTRATOR', 'backend/.env missing. Provisioning from .env.example...', colors.yellow);
-      fs.copyFileSync(envExamplePath, envPath);
-      log('ORCHESTRATOR', 'Provisioning complete.', colors.green);
-    } else {
-      log('ORCHESTRATOR', 'Warning: Neither .env nor .env.example found in backend.', colors.red);
-    }
-  } else {
-    log('ORCHESTRATOR', 'Backend environment detected.', colors.green);
+const SERVICES = {
+  backend: {
+    name: 'BACKEND-API',
+    cmd: 'node server.js',
+    cwd: path.join(__dirname, '../backend'),
+    color: colors.green
+  },
+  app: {
+    name: 'DASHBOARD-APP',
+    cmd: 'npm run dev',
+    cwd: appCwd, // Substrate-isolated industrial 'app' or 'frontend' folder
+    color: colors.cyan
+  },
+  legacyRedirect: {
+    name: 'LEGACY-3000',
+    cmd: 'node legacy-redirect.js',
+    cwd: path.join(__dirname, '..'), // Run from root where the file is
+    color: colors.red
+  },
+  enforcement: {
+    name: 'ENFORCEMENT',
+    cmd: 'node server.js',
+    cwd: path.join(__dirname, '../backend'),
+    color: colors.red
   }
-}
+};
 
-/**
- * Phase 2: Database Provisioning
- */
-function provisionDatabase() {
-  log('PRISMA', 'Starting database provisioning...', colors.blue);
-  const backendDir = path.join(__dirname, '../backend');
+function startService(config, env = {}) {
+  const { name, cmd, cwd, color } = config;
+  const [command, ...args] = cmd.split(' ');
   
-  // Basic connectivity check - avoid running Prisma if DB is definitely down
-  try {
-    log('PRISMA', 'Checking database connectivity...', colors.blue);
-    // Simple ping to check if something is listening on the DB port
-    // In a real scenario, we might use a small node script to probe
-  } catch (e) {
-    log('PRISMA', 'Database connectivity check skipped.', colors.yellow);
-  }
-
-  try {
-    log('PRISMA', 'Generating client...', colors.blue);
-    execSync('npx prisma generate', { cwd: backendDir, stdio: 'inherit' });
-    
-    log('PRISMA', 'Running migrations...', colors.blue);
-    // Run migration with a timeout to catch P1001 early
-    execSync('npx prisma migrate dev --name auto_orchestration', { 
-      cwd: backendDir, 
-      stdio: 'inherit',
-      timeout: 15000 // 15 seconds timeout
-    });
-    
-    log('PRISMA', 'Database synchronized successfully.', colors.green);
-  } catch (error) {
-    log('PRISMA', 'Database provisioning failed (Timeout or P1001).', colors.red);
-    log('PRISMA', 'Suggestion: Ensure "docker compose up -d postgres" is running.', colors.yellow);
-  }
-}
-
-/**
- * Phase 3: Service Execution
- */
-function startService(name, command, args, cwd, color, extraEnv = {}) {
-  log('ORCHESTRATOR', `Launching ${name}...`, colors.cyan);
+  console.log(`${color}[${name}] 🚀 Booting substrate...${colors.reset}`);
   
-  const child = spawn(command, args, { 
-    cwd, 
+  const proc = spawn(command, args, {
+    cwd,
     shell: true,
-    stdio: ['inherit', 'pipe', 'pipe'],
-    env: { ...process.env, ...extraEnv, FORCE_COLOR: true }
+    stdio: 'inherit',
+    env: { ...process.env, ...env }
   });
 
-  child.stdout.on('data', (data) => {
-    log(name, data.toString().trim(), color);
+  proc.on('error', (err) => {
+    console.error(`${colors.red}[${name}] ❌ FAILURE: ${err.message}${colors.reset}`);
   });
-
-  child.stderr.on('data', (data) => {
-    log(name, `[STDERR] ${data.toString().trim()}`, colors.red);
-  });
-
-  child.on('close', (code) => {
-    log('ORCHESTRATOR', `${name} process exited with code ${code}`, colors.yellow);
-  });
-
-  services.push(child);
 }
 
-/**
- * Orchestrator Main Entry Point
- */
-async function orchestrate() {
-  console.log(`${colors.bright}${colors.green}=== CivilCOPZ Orchestrator Substrate (Windows Hardened) ===${colors.reset}\n`);
+(async () => {
+  console.clear();
+  console.log(`${colors.bright}${colors.magenta}=== CivilCOPZ Platform Orchestrator (v1.5) ===${colors.reset}\n`);
 
-  auditEnvironment();
-  auditDependencies();
-  provisionDatabase();
+  console.log("🔍 Checking National Port Sovereignty...");
 
-  // Start Backend API
-  startService('BACKEND-API', 'npm', ['run', 'dev'], path.join(__dirname, '../backend'), colors.green);
+  const port3000 = await ensurePort3000();
 
-  // Start AI Worker - Pass environment variable via spawn env object for Windows compatibility
-  startService('AI-WORKER', 'node', ['server.js'], path.join(__dirname, '../backend'), colors.magenta, { WORKER_MODE: 'ai' });
+  // Start Backend Substrate
+  startService(SERVICES.backend);
 
-  // Start Frontend
-  startService('FRONTEND', 'npm', ['run', 'dev'], path.join(__dirname, '../frontend'), colors.blue);
+  // Start App Substrate
+  startService(SERVICES.app);
 
-  // Final health check before yielding Control
-  console.log('[ORCHESTRATOR] Substrate ready. Ensuring administrative access...');
-  try {
-    // Small script to ensure admin exists
-    const seedScript = `
-      const { PrismaClient } = require('@prisma/client');
-      const bcrypt = require('bcryptjs');
-      const { parse } = require('connection-string');
-      const prisma = new PrismaClient();
-      async function main() {
-        const adminEmail = 'admin@civilcopz.gov';
-        const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
-        if (!existing) {
-          const hash = await bcrypt.hash('AdminPassword123!', 10);
-          await prisma.user.create({ data: { email: adminEmail, password: hash, role: 'admin' } });
-          console.log('✅ Default Admin Provisioned: admin@civilcopz.gov');
-        }
-      }
-      main().catch(console.error).finally(() => prisma.$disconnect());
-    `;
-    const fs = require('fs');
-    const tempPath = path.join(__dirname, '..', 'backend', 'temp_seed.js');
-    fs.writeFileSync(tempPath, seedScript);
-    
-    const { execSync } = require('child_process');
-    execSync('node temp_seed.js', { cwd: path.join(__dirname, '..', 'backend'), stdio: 'inherit' });
-    fs.unlinkSync(tempPath);
-  } catch (e) {
-    console.warn('[ORCHESTRATOR] Admin seeding skipped or failed. Manual registration may be required.');
+  // Start AI Worker Substrate (DEPRECATED: Now runs in main Backend process to save memory)
+  // startService(SERVICES.backend, { WORKER_MODE: 'ai' });
+
+  // Start Statutory Enforcement Engine (DEPRECATED: Now runs in main Backend process to save memory)
+  // startService(SERVICES.enforcement, { WORKER_MODE: 'enforcement' });
+
+  // Handle Legacy Port 3000 (Safety Net)
+  if (port3000.free) {
+    startService(SERVICES.legacyRedirect);
+  } else {
+    console.warn(`${colors.yellow}⚠️  Port 3000 Occupied — Skipping industrial redirect shim.${colors.reset}`);
   }
 
-  log('ORCHESTRATOR', 'All systems nominal. Monitoring health...', colors.cyan);
-}
+  // Final status report
+  setTimeout(() => {
+    console.log(`
+${colors.bright}${colors.green}🚀 CivilCOPZ System READY - END-TO-END LIFECYCLE ACTIVE
 
-// Global Dependency Audit
-function auditDependencies() {
-  log('ORCHESTRATOR', 'Auditing mission-critical dependencies...', colors.yellow);
-  const required = ['zod', 'prom-client', 'pino', 'connection-string'];
-  const backendNodeModules = path.join(__dirname, '../backend/node_modules');
-  
-  if (!fs.existsSync(backendNodeModules)) {
-    log('ORCHESTRATOR', 'CRITICAL FAILURE: backend/node_modules is missing.', colors.red);
-    log('ORCHESTRATOR', 'PLEASE RUN "npm run stabilize" BEFORE PROCEEDING.', colors.red);
-    process.exit(1);
-  }
+${colors.bright}${colors.cyan}👉 ENTRY (UI):      http://localhost:5173
+${colors.bright}${colors.yellow}🔧 API GATEWAY:     http://localhost:4000
+${colors.bright}${colors.green}📡 SOCKETS:         Real-time Substrate Online (:4000)
+${colors.bright}${colors.magenta}🤖 AI WORKER:       Lifecycle Automation Active
+${colors.bright}${colors.red}⚖️  ENFORCEMENT:     Statutory Deadline Monitor Online
 
-  for (const mod of required) {
-    try {
-      require.resolve(mod, { paths: [backendNodeModules] });
-    } catch (e) {
-      log('ORCHESTRATOR', `CRITICAL FAILURE: Module '${mod}' not found in backend substrate.`, colors.red);
-      log('ORCHESTRATOR', 'PLEASE RUN "npm run stabilize" BEFORE PROCEEDING.', colors.red);
-      process.exit(1);
-    }
-  }
-  log('ORCHESTRATOR', 'Dependency audit successful. All substrates stabilized.', colors.green);
-}
+${colors.bright}${colors.red}⚠️  Maintenance:    Ensure 'npx prisma generate' and 'npm install' are run.
+${colors.bright}${colors.red}🐘 Substrate:       Redis MUST be running for AI & Enforcement Lifecycle workers.
 
-// Global Cleanup
-process.on('SIGINT', () => {
-  log('ORCHESTRATOR', 'Termination signal received. Cleaning up services...', colors.yellow);
-  services.forEach(child => child.kill());
-  process.exit();
-});
+Use ONLY 5173 for Dashboard UI.
+${colors.reset}`);
+  }, 5000);
 
-orchestrate().catch(error => {
-  log('ORCHESTRATOR', `Critical failure: ${error.message}`, colors.red);
-  process.exit(1);
-});
+})();

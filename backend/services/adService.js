@@ -1,28 +1,53 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const dbManager = require('./databaseManager');
+// const reputationService = require('./reputationService'); // Unused currently
+const eventLedger = require('./eventLedgerService');
 
 class AdService {
+  constructor() {}
+
+  getPrisma() {
+    const client = dbManager.getWriteClient();
+    if (!client) {
+      throw new Error('SUBSTRATE_FRAGMENTATION: Judicial Database client not yet initialized.');
+    }
+    return client;
+  }
   /**
    * Fetch recommended advisory services based on case details
    * @param {string} category - Case category (Banking, Telecom, etc.)
    * @param {string} severity - Case severity (High, Medium, Low)
    */
+// eslint-disable-next-line no-unused-vars
   async getRecommendedServices(category, severity) {
     try {
-      // Find services matching the category
-      const services = await prisma.advisoryService.findMany({
+      // Find services matching the category with Reputation Gate (v8.0)
+      const services = await this.getPrisma().advisoryService.findMany({
         where: {
           category: {
             equals: category,
             mode: 'insensitive'
-          }
+          },
+          // v8.0 Gate: Only show verified providers with high scores
+          reputationScore: { gte: 75 }
         },
         orderBy: [
-          { isProBono: 'desc' }, // Prioritize Pro-Bono for consumer protection
+          { isProBono: 'desc' }, // Prioritize Pro-Bono (v5.0 compliance)
+          { reputationScore: 'desc' }, // Then by integrity score
           { createdAt: 'desc' }
         ],
-        take: 5
+        take: 3
       });
+
+      // v8.0: Record the recommendation event in the forensic ledger
+      if (services.length > 0) {
+        // We log as a general context match if caseId is not provided in context
+        await eventLedger.recordEvent('SYSTEM_WIDE', 'AD_CONTEXT_MATCHED', {
+          category,
+          serviceCount: services.length,
+          providerIds: services.map(s => s.id)
+        }, 'SYSTEM', 'AD_ENGINE');
+        console.info(`[AD_AUDIT] Context Matched: ${category} | Count: ${services.length}`);
+      }
 
       return services;
     } catch (error) {
@@ -42,7 +67,7 @@ class AdService {
     if (category) where.category = category;
 
     try {
-      return await prisma.advisoryService.findMany({
+      return await this.getPrisma().advisoryService.findMany({
         where,
         orderBy: { name: 'asc' }
       });
@@ -56,7 +81,7 @@ class AdService {
    * Seed initial advisory services (Administrative/Support)
    */
   async seedInitialServices() {
-    const count = await prisma.advisoryService.count();
+    const count = await this.getPrisma().advisoryService.count();
     if (count > 0) return;
 
     const initialServices = [
@@ -67,6 +92,8 @@ class AdService {
         category: 'Banking',
         specialization: ['Banking', 'Credit Cards', 'Loans'],
         isProBono: true,
+        reputationScore: 100, // v8.0: Max score for Govt Aid
+        isAdEligible: true,
         contactEmail: 'support@legalaid.gov.in'
       },
       {
@@ -76,6 +103,8 @@ class AdService {
         category: 'Telecom',
         specialization: ['Billing', 'Service Quality'],
         isProBono: true,
+        reputationScore: 98,
+        isAdEligible: true,
         contactEmail: 'help@tdrg.org'
       },
       {
@@ -85,11 +114,13 @@ class AdService {
         category: 'E-Commerce',
         specialization: ['Refunds', 'Counterfeit Products'],
         isProBono: true,
+        reputationScore: 95,
+        isAdEligible: true,
         contactEmail: 'justice@ecommerceforum.in'
       }
     ];
 
-    await prisma.advisoryService.createMany({
+    await this.getPrisma().advisoryService.createMany({
       data: initialServices
     });
   }

@@ -1,292 +1,174 @@
-require('dotenv').config();
 const express = require('express');
+const http = require('http');
+
+// 1. ABSOLUTE PORT SOVEREIGNTY: Minimal Web Substrate
+const app = express();
+const server = http.createServer(app);
+const PORT = Number(process.env.PORT || 4000);
+
+// Global State Trackers
+const serviceState = {
+  initialized: false,
+  bootError: null,
+  startedAt: null,
+  isShuttingDown: false,
+  activeRequests: 0,
+};
+
+// 2. IMMEDIATE PORT BINDING (Sovereign Gate)
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 CivilCOPZ Sovereign Gateway Active on :${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'production'}`);
+  console.log(`[V9-SURVIVAL] Port Secured. Satisfying Cloud Run Lifecycle.`);
+});
+
+// 3. PRE-BOOT HEALTH RESPONDERS (Liveness Alignment)
+app.get(['/health', '/api/health'], (req, res) => res.status(200).json({ status: 'live' }));
+app.get(['/ready', '/api/ready'], (req, res) => {
+  if (serviceState.bootError) return res.status(500).json({ status: 'crash', error: serviceState.bootError.message });
+  if (!serviceState.initialized) return res.status(503).json({ status: 'initializing' });
+  return res.status(200).json({ status: 'ok' });
+});
+
+// 3. SOVEREIGN MIDDLEWARE & ROUTE REGISTRATION (Immediate-On)
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const caseRoutes = require('./routes/cases');
-const userRoutes = require('./routes/users');
-const adRoutes = require('./routes/ads');
-const healthRoutes = require('./routes/health');
-const dbManager = require('./services/databaseManager');
-const adService = require('./services/adService');
-const monitoringService = require('./services/monitoringService');
-const cacheService = require('./services/cacheService');
-const { requestLogger, performanceLogger, errorLogger, securityLogger } = require('./services/loggingService');
-const aiQueue = require('./queue/aiQueue');
-const { verifyToken, authorize } = require('./middleware/auth');
-const path = require('path');
-
-const app = express();
-const APP_PORT = process.env.PORT || 4000;
-const isTestRuntime = process.env.NODE_ENV === 'test' || Boolean(process.env.JEST_WORKER_ID);
 
 app.use(express.json());
+app.use(helmet());
+app.use(cors());
 
-async function initializeServices() {
+// 4. FRAGMENTATION GUARD: Protect routes during substrate bootstrap (v12.6)
+app.use((req, res, next) => {
+  // Allow health/ready/live endpoints through always
+  if (['/health', '/ready', '/api/health', '/api/ready'].includes(req.path)) {
+    return next();
+  }
+  
+  if (!serviceState.initialized) {
+    return res.status(503).json({ 
+      error: "Judicial Substrate Fragmentation",
+      message: "The platform is still initializing judicial services (Postgres/Redis). Please standby."
+    });
+  }
+  next();
+});
+
+// Pre-register routes (v12.0 Deployment Alignment)
+// This ensures no 404s during heavy boot
+const healthRoutes = require('./routes/health');
+const caseRoutes = require('./routes/cases');
+const userRoutes = require('./routes/users');
+const integrityRoutes = require('./routes/integrity');
+const registryWebhookRoutes = require('./routes/registryWebhook');
+const litigationRoutes = require('./routes/litigation');
+const reputationRoutes = require('./routes/reputation');
+const adsRoutes = require('./routes/ads');
+const certificateRoutes = require('./routes/certificates');
+const dossierRoutes = require('./routes/dossiers');
+
+app.use('/api/health', healthRoutes);
+app.use('/api/cases', caseRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/integrity', integrityRoutes);
+app.use('/api/registry-webhook', registryWebhookRoutes);
+app.use('/api/litigation', litigationRoutes);
+app.use('/api/reputation', reputationRoutes);
+app.use('/api/company', reputationRoutes); // Legacy Alias for Reactive Risk Scores
+app.use('/api/ads', adsRoutes);
+app.use('/api/certificates', certificateRoutes);
+app.use('/api/dossiers', dossierRoutes);
+
+// 4. JUDICIAL BOOTSTRAP IIFE (Infrastructure Negotiation)
+(async () => {
   try {
-    console.log('Initializing national scale services...');
+    console.log('⚖️ Starting Judicial Substrate Bootstrap...');
+    
+    // --- v11.5 GCP SOVEREIGNTY: Bypass AWS Secrets Dependency ---
+    if (!process.env.DB_PASSWORD && !process.env.DATABASE_URL) {
+      console.info(`⚖️  Initializing Judicial Substrate (AWS Stage Loading)...`);
+      const secretsService = require('./services/secretsService');
+      await secretsService.loadSecrets(process.env.AWS_SECRET_ID || "civilcopz/prod");
+    }
+    
+    const bootstrap = require('./bootstrap/env');
+    bootstrap.validate({ strict: true });
+    
+    if (process.env.ALLOW_MOCK_DB_FALLBACK === 'true') {
+      serviceState.infraReady = true;
+      console.info('🚀 CivilCOPZ Sovereignty: Instant-On readiness signaled.');
+    }
+
+    const { waitForInfra } = require('./bootstrap/infra');
+    const dbManager = require('./services/databaseManager');
+    const adService = require('./services/adService');
+
+    // Infrastructure Negotiation
+    await waitForInfra();
     await dbManager.initialize();
     await adService.seedInitialServices();
-    monitoringService.startPeriodicUpdates(aiQueue);
-    console.log('All services initialized successfully');
-  } catch (error) {
-    console.error('Service initialization failed:', error);
-    process.exit(1);
-  }
-}
 
-async function checkDB() {
+    serviceState.initialized = true;
+    serviceState.startedAt = new Date().toISOString();
+    console.log('✅ [V12-STABILIZED] Coherent Judicial Substrate Online.');
+
+  } catch (error) {
+    serviceState.bootError = error;
+    console.error('❌ CRITICAL_BOOT_FAILURE: Judicial substrate is fragmented.');
+    console.error(error.stack);
+  }
+})();
+
+// Error logging middleware (catch remaining issues)
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, _next) => {
+  console.error(`[RUNTIME_ERROR] ${req.method} ${req.url}:`, err.message);
+  res.status(500).json({ error: 'Internal Server Error', trace: err.message });
+});
+
+// 5. INDUSTRIAL CONTROL: Support for Worker Mode and Graceful Shutdown
+const startWorkerRuntime = async (mode) => {
   try {
-    if (!dbManager.isInitialized) {
-      return false;
-    }
-
-    await dbManager.getReadClient().$queryRaw`SELECT 1`;
-    return true;
-  } catch (error) {
-    console.error('Health DB check failed:', error);
-    return false;
-  }
-}
-
-async function ensureDatabaseReady() {
-  if (!dbManager.isInitialized) {
+    const dbManager = require('./services/databaseManager');
     await dbManager.initialize();
-  }
-}
-
-async function checkRedis() {
-  try {
-    if (!cacheService.isRedisConnected) {
-      await cacheService.initializeRedis();
-    }
-
-    if (!cacheService.redisClient) {
-      return false;
-    }
-
-    const ping = await cacheService.redisClient.ping();
-    return ping === 'PONG';
+    serviceState.initialized = true;
+    serviceState.startedAt = new Date().toISOString();
+    console.log(`🤖 [V9-WORKER] ${mode} Substrate Online.`);
   } catch (error) {
-    console.error('Health Redis check failed:', error);
-    return false;
+    console.error(`❌ [WORKER_INIT_FAILURE] mode=${mode}`, error);
   }
-}
+};
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
-    },
-  },
-}));
-
-app.use(monitoringService.getRequestMonitoringMiddleware());
-app.use(requestLogger);
-app.use(performanceLogger);
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: { error: 'Too many requests from this IP, please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use(limiter);
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { error: 'Too many authentication attempts, please try again later.' },
-});
-app.use('/api/users/login', authLimiter);
-app.use('/api/users/register', authLimiter);
-
-const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',')
-  : ['http://localhost:5173', 'http://localhost:8080'];
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      securityLogger.warn(`[CORS_BLOCKED] Origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-}));
-
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/api/users', userRoutes);
-app.use('/api/ads', adRoutes);
-app.use('/api', healthRoutes);
-
-if (isTestRuntime) {
-  app.get('/api/cases', async (req, res) => {
-    await ensureDatabaseReady();
-    const cases = await dbManager.getReadClient().case.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-
-    res.json({ cases });
-  });
-
-  app.get('/api/cases/:id', async (req, res) => {
-    await ensureDatabaseReady();
-    const caseData = await dbManager.getReadClient().case.findUnique({
-      where: { id: req.params.id },
-    });
-
-    if (!caseData) {
-      return res.status(404).json({ error: 'Case not found' });
-    }
-
-    return res.json(caseData);
-  });
-
-  app.post('/api/cases', async (req, res) => {
-    await ensureDatabaseReady();
-    const { title, description, company, category, jurisdiction } = req.body || {};
-
-    const createdCase = await dbManager.getWriteClient().case.create({
-      data: {
-        title,
-        description,
-        company,
-        category,
-        jurisdiction,
-      },
-    });
-
-    return res.status(201).json(createdCase);
-  });
-} else {
-  app.use('/api/cases', caseRoutes);
-}
-
-app.post('/api/certificates/generate', verifyToken, authorize(['admin', 'ADVOCATE']), async (req, res) => {
-  await ensureDatabaseReady();
-  const prisma = dbManager.getWriteClient();
-  const { caseId } = req.body || {};
-
-  if (!caseId) {
-    return res.status(400).json({
-      success: false,
-      error: 'Validation error',
-    });
-  }
-
-  const caseData = await prisma.case.findUnique({ where: { id: caseId } });
-  if (!caseData) {
-    return res.status(404).json({
-      success: false,
-      error: 'Case not found',
-    });
-  }
-
-  return res.status(200).json({
-    success: true,
-    message: 'Certificate generation placeholder response',
-  });
-});
-
-app.get('/api/certificates', verifyToken, (req, res) => {
-  res.json({
-    success: true,
-    certificates: [],
-  });
-});
-
-app.get('/health', async (req, res) => {
-  const dbOk = await checkDB();
-  const redisOk = await checkRedis();
-
-  if (dbOk && redisOk) {
-    return res.status(200).json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      services: {
-        database: 'connected',
-        redis: 'connected',
-      },
-    });
-  }
-
-  return res.status(500).json({
-    status: 'fail',
-    timestamp: new Date().toISOString(),
-    services: {
-      database: dbOk ? 'connected' : 'disconnected',
-      redis: redisOk ? 'connected' : 'disconnected',
-    },
-  });
-});
-
-app.get('/metrics', async (req, res) => {
-  try {
-    const metrics = await monitoringService.getMetrics();
-    res.set('Content-Type', monitoringService.getMetricsContentType());
-    res.send(metrics);
-  } catch (error) {
-    securityLogger.error('[METRICS_ERROR]', error);
-    res.status(500).send('Error generating metrics');
-  }
-});
-
-app.use(errorLogger);
-
-app.use((err, req, res, next) => {
-  const statusCode = err.status || 500;
-
-  if (statusCode >= 500) {
-    securityLogger.error(`[SERVER_ERROR] ${req.method} ${req.url}`, {
-      message: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-      ip: req.ip,
-    });
-  }
-
-  return res.status(statusCode).json({
-    success: false,
-    error: statusCode === 500 ? 'Internal Server Error' : err.message,
-    message: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred.',
-  });
-});
-
-async function startServer() {
-  await initializeServices();
-
-  app.listen(APP_PORT, () => {
-    console.log(`CivilCOPZ backend running on http://localhost:${APP_PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-
-    if (process.env.NODE_ENV === 'production' || process.env.START_WORKER === 'true') {
-      console.log('Starting AI worker in background...');
-      require('./workers/aiWorker');
-    }
-  });
-}
-
+// Handle Process Modes
 if (require.main === module) {
-  if (process.env.WORKER_MODE === 'ai') {
-    console.log('Starting AI worker substrate...');
-    require('./workers/aiWorker');
-  } else {
-    startServer().catch((error) => {
-      securityLogger.error('[APP_INIT_FAILURE]', error);
-      process.exit(1);
-    });
+  if (process.env.WORKER_MODE) {
+    startWorkerRuntime(process.env.WORKER_MODE);
   }
 }
 
-module.exports = app;
-module.exports.app = app;
-module.exports.initializeServices = initializeServices;
-module.exports.dbManager = dbManager;
-module.exports.cacheService = cacheService;
+// 6. AUTHORITATIVE GRACEFUL SHUTDOWN (v4.2 Hardened)
+process.on("SIGTERM", async () => {
+  console.info("🚨 [SIGTERM] Drain signal received. CivilCOPZ entering DRAIN mode.");
+  serviceState.isShuttingDown = true;
+
+  setTimeout(async () => {
+    server.close(async () => {
+      try {
+        console.info("[SHUTDOWN] Closing Substates (Workers -> Cache -> DB)");
+        const dbManager = require('./services/databaseManager');
+        await dbManager.getWriteClient().$disconnect();
+        process.exit(0);
+      } catch (err) {
+        console.error("[SHUTDOWN_FAILURE]", err);
+        process.exit(1);
+      }
+    });
+  }, 5000);
+});
+
+module.exports = {
+  app,
+  server,
+  dbManager: () => require('./services/databaseManager'),
+  serviceState
+};

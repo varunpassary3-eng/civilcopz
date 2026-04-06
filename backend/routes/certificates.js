@@ -140,7 +140,7 @@ router.get('/case/:caseId', verifyToken, async (req, res) => {
     const caseId = req.params.caseId;
 
     // Verify access to case
-    const caseData = await require('../models/Case').findOne({
+    const caseData = await getPrisma().case.findUnique({
       where: { id: caseId }
     });
 

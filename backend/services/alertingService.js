@@ -18,30 +18,41 @@ class AlertingService {
             }
         });
 
-        // Alert thresholds
+        // Alert thresholds - Synchronized with 'National-Grade' Soft Launch targets
         this.thresholds = {
-            responseTime: 5000, // 5 seconds
-            errorRate: 0.05, // 5% error rate
-            cpuUsage: 90, // 90% CPU
-            memoryUsage: 90, // 90% memory
-            diskUsage: 90, // 90% disk
-            queueDepth: 1000, // 1000 queued jobs
-            dbConnections: 90 // 90% of max connections
+            responseTime: 500,  // Latency < 500ms (Sovereign Level)
+            errorRate: 0.005,   // Error rate < 0.5% (High Reliability)
+            cpuUsage: 70,       // CPU < 70% (Industrial Capacity)
+            memoryUsage: 75,    // Memory < 75%
+            diskUsage: 85,      // Disk < 85%
+            queueDepth: 50,     // Low tolerance for queue lag (National Scale)
+            dbConnections: 80   // DB Capacity < 80%
         };
+        
+        // Slack Configuration
+        this.slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
     }
 
     /**
-     * Send alert through multiple channels
-     * @param {Object} alert - Alert configuration
+     * Unified Alert Action (Operations-Grade - Phase 1)
+     * @param {Object} alert - Alert configuration { type, message, severity, title, source }
      */
     async sendAlert(alert) {
-        const alertKey = `${alert.type}-${alert.severity}-${alert.source}`;
+        // Handle simplified { type, message } signature
+        if (alert.message && !alert.description) {
+            alert.description = alert.message;
+            alert.title = alert.title || `Operational Alert: ${alert.type}`;
+            alert.severity = alert.severity || 'high';
+            alert.source = alert.source || 'alert_rules';
+        }
 
-        // Check cooldown
+        const alertKey = `${alert.type}-${alert.severity}`;
+
+        // Check cooldown (Sovereign Level - Phase 13)
         if (this.alertHistory.has(alertKey)) {
             const lastAlert = this.alertHistory.get(alertKey);
             if (Date.now() - lastAlert < this.alertCooldown) {
-                return; // Skip alert due to cooldown
+                return; // Skip alert due to strict cooldown
             }
         }
 
@@ -50,6 +61,7 @@ class AlertingService {
         // Send alerts through multiple channels
         const alertPromises = [
             this.sendEmailAlert(alert),
+            this.sendSlack(alert.description || alert.message),
             this.sendSentryAlert(alert),
             this.sendUptimeRobotAlert(alert),
             this.logAlert(alert)
@@ -59,6 +71,22 @@ class AlertingService {
             await Promise.allSettled(alertPromises);
         } catch (error) {
             console.error('Alert sending failed:', error);
+        }
+    }
+
+    /**
+     * Send Slack alert (Operations-Grade signature)
+     * @param {string} message - Message text
+     */
+    async sendSlack(message) {
+        if (!this.slackWebhookUrl) return;
+
+        try {
+            await axios.post(this.slackWebhookUrl, {
+                text: `🚨 *CivilCOPZ Monitoring Alert:*\n${message}`
+            });
+        } catch (error) {
+            console.error('Slack alert failed:', error.response?.data || error.message);
         }
     }
 
@@ -109,6 +137,53 @@ class AlertingService {
             }
         } catch (error) {
             console.error('Sentry alert failed:', error);
+        }
+    }
+
+    /**
+     * Send alert to Slack
+     * @param {Object} alert - Alert data
+     */
+    async sendSlackAlert(alert) {
+        if (!this.slackWebhookUrl) {
+            return;
+        }
+
+        const severityEmoji = this.getSeverityEmoji(alert.severity);
+        const payload = {
+            text: `${severityEmoji} *CivilCOPZ Monitoring Alert: ${alert.title}*`,
+            attachments: [{
+                color: this.getSeverityColor(alert.severity),
+                fields: [
+                    { title: 'Severity', value: alert.severity.toUpperCase(), short: true },
+                    { title: 'Type', value: alert.type, short: true },
+                    { title: 'Source', value: alert.source, short: false },
+                    { title: 'Description', value: alert.description, short: false }
+                ],
+                footer: 'CivilCOPZ National Infrastructure Substrate',
+                ts: Math.floor(Date.now() / 1000)
+            }]
+        };
+
+        try {
+            await axios.post(this.slackWebhookUrl, payload);
+        } catch (error) {
+            console.error('Slack alert failed:', error.response?.data || error.message);
+        }
+    }
+
+    /**
+     * Get emoji for severity level
+     * @param {string} severity - Alert severity
+     * @returns {string} Emoji
+     */
+    getSeverityEmoji(severity) {
+        switch (severity) {
+            case 'critical': return '🔴';
+            case 'high': return '⚠️';
+            case 'medium': return 'ℹ️';
+            case 'low': return '🟢';
+            default: return '🔔';
         }
     }
 
@@ -220,9 +295,9 @@ class AlertingService {
         if (responseTime > this.thresholds.responseTime) {
             await this.sendAlert({
                 type: 'performance',
-                severity: responseTime > 10000 ? 'critical' : 'high',
-                title: 'High Response Time Detected',
-                description: `Response time of ${responseTime}ms exceeds threshold of ${this.thresholds.responseTime}ms`,
+                severity: responseTime > 2000 ? 'critical' : 'high',
+                title: 'National Scale Latency Breach',
+                description: `Response time of ${responseTime}ms exceeds sovereign threshold of ${this.thresholds.responseTime}ms`,
                 source: endpoint,
                 metrics: { responseTime, threshold: this.thresholds.responseTime },
                 recommendations: [
@@ -244,9 +319,9 @@ class AlertingService {
         if (errorRate > this.thresholds.errorRate) {
             await this.sendAlert({
                 type: 'reliability',
-                severity: errorRate > 0.1 ? 'critical' : 'high',
-                title: 'High Error Rate Detected',
-                description: `Error rate of ${(errorRate * 100).toFixed(2)}% exceeds threshold of ${(this.thresholds.errorRate * 100)}%`,
+                severity: errorRate > 0.01 ? 'critical' : 'high',
+                title: 'Grievance Pipeline Error Spill',
+                description: `Error rate of ${(errorRate * 100).toFixed(2)}% exceeds sovereign threshold of ${(this.thresholds.errorRate * 100)}%`,
                 source: service,
                 metrics: { errorRate, threshold: this.thresholds.errorRate },
                 recommendations: [

@@ -1,5 +1,7 @@
 # CivilCOPZ Production Deployment Checklist
 
+> Note: this guide describes how to deploy the stack, but deployment capability alone is not the same as production proof. Complete the staging, chaos, observability, rollback, and evidence-consistency validations in `PRODUCTION-PROVING-PLAN.md` before treating the platform as production-proven.
+
 ## 🎯 FINAL STATUS: PRODUCTION READY
 
 CivilCOPZ has been transformed from a capable platform to a **national-scale enterprise solution** with production-grade infrastructure, monitoring, security, and legal compliance.

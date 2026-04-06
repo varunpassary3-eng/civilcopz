@@ -1,0 +1,69 @@
+name: CivilCOPZ Verification Engine (CVE)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  forensic-verification:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: civilcopz_test
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Prisma Generate
+        run: npx prisma generate --schema=backend/prisma/schema.prisma
+
+      - name: Execute CVE Forensic Suite
+        run: npm run test:cve -- --maxWorkers=50%
+        env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/civilcopz_test
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: test-secret-key-12345
+          NODE_ENV: test
+
+      - name: "Retention: Forensic PDF Snapshots"
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: forensic-pdf-artifacts
+          path: backend/uploads/Court_Complaint_*.pdf
+          retention-days: 7
+
+      - name: "Retention: Coverage & JUnit Reports"
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cve-forensic-reports
+          path: test/reports/
+          retention-days: 14

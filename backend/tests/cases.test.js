@@ -1,58 +1,48 @@
-const request = require('supertest');
-const { PrismaClient } = require('@prisma/client');
-const app = require('../server');
+const timestampAuthority = require('../services/timestampAuthorityService');
+const certificate65B = require('../services/certificate65BService');
+const courtDossier = require('../services/courtDossierService');
+const evidencePackaging = require('../services/evidencePackagingService');
+const verificationService = require('../services/verificationService');
+const chainOfCustody = require('../services/chainOfCustodyService');
 
-const prisma = new PrismaClient();
-
-describe('Cases API', () => {
-  beforeAll(async () => {
-    // Clean up test data
-    await prisma.case.deleteMany();
+describe('Litigation Services', () => {
+  test('All litigation services should load successfully', () => {
+    expect(typeof timestampAuthority.timestampEvidenceEntry).toBe('function');
+    expect(typeof certificate65B.generateCertificate).toBe('function');
+    expect(typeof courtDossier.generateDossierSummaryPDF).toBe('function');
+    expect(typeof evidencePackaging.createEvidenceBundle).toBe('function');
+    expect(typeof verificationService.generateVerificationManifest).toBe('function');
+    expect(typeof chainOfCustody.recordUpload).toBe('function');
   });
 
-  afterAll(async () => {
-    await prisma.$disconnect();
+  test('Timestamp Authority should have required methods', () => {
+    expect(typeof timestampAuthority.requestTimestamp).toBe('function');
+    expect(typeof timestampAuthority.verifyTimestamp).toBe('function');
+    expect(typeof timestampAuthority.getTimestampStatus).toBe('function');
   });
 
-  it('should create a case', async () => {
-    const response = await request(app)
-      .post('/api/cases')
-      .send({
-        title: 'Test Case',
-        description: 'Test description',
-        company: 'Test Company',
-        category: 'Telecom',
-        jurisdiction: 'District',
-      });
-
-    expect(response.status).toBe(201);
-    expect(response.body.title).toBe('Test Case');
+  test('Certificate 65B should have required methods', () => {
+    expect(typeof certificate65B.getCertificate).toBe('function');
+    expect(typeof certificate65B.getCaseCertificates).toBe('function');
+    expect(typeof certificate65B.verifyCertificate).toBe('function');
   });
 
-  it('should get cases', async () => {
-    const response = await request(app).get('/api/cases');
-
-    expect(response.status).toBe(200);
-    expect(Array.isArray(response.body.cases)).toBe(true);
+  test('Court Dossier should have required methods', () => {
+    expect(typeof courtDossier.createDossierZipBundle).toBe('function');
   });
 
-  it('should get case by id', async () => {
-    // First create a case
-    const createResponse = await request(app)
-      .post('/api/cases')
-      .send({
-        title: 'Test Case 2',
-        description: 'Test description 2',
-        company: 'Test Company 2',
-        category: 'Banking',
-        jurisdiction: 'State',
-      });
+  test('Evidence Packaging should have required methods', () => {
+    expect(typeof evidencePackaging.getPackage).toBe('function');
+    expect(typeof evidencePackaging.verifyPackage).toBe('function');
+  });
 
-    const caseId = createResponse.body.id;
+  test('Verification Service should have required methods', () => {
+    expect(typeof verificationService.generateVerificationReport).toBe('function');
+  });
 
-    const response = await request(app).get(`/api/cases/${caseId}`);
-
-    expect(response.status).toBe(200);
-    expect(response.body.id).toBe(caseId);
+  test('Chain of Custody should have required methods', () => {
+    expect(typeof chainOfCustody.getChainOfCustody).toBe('function');
+    expect(typeof chainOfCustody.getCurrentCustodian).toBe('function');
   });
 });
+

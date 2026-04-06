@@ -1,17 +1,25 @@
 const { Worker } = require('bullmq');
-const { PrismaClient } = require('@prisma/client');
+const Sentry = require('@sentry/node');
+const dbManager = require('../services/databaseManager');
 const aiService = require('../services/aiService');
 
-const prisma = new PrismaClient();
+const getPrisma = () => dbManager.getWriteClient();
+const aiRequestTimeoutMs = Number(process.env.AI_REQUEST_TIMEOUT_MS || 30000);
 
 // Redis connection configuration
+const maxRetriesPerRequest = 3;
 const connection = {
   host: process.env.REDIS_HOST || '127.0.0.1',
   port: process.env.REDIS_PORT || 6379,
   password: process.env.REDIS_PASSWORD || undefined,
   retryDelayOnFailover: 100,
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: null,
 };
+
+// Initialize Sentry for worker (Phase 6)
+if (process.env.SENTRY_DSN) {
+  Sentry.init({ dsn: process.env.SENTRY_DSN });
+}
 
 // Create AI processing worker
 const aiWorker = new Worker('ai-processing', async job => {
@@ -20,13 +28,18 @@ const aiWorker = new Worker('ai-processing', async job => {
   try {
     const { caseId, description, title, company } = job.data;
 
-    // Use real AI service for classification
-    const aiResult = await aiService.classifyCase(description);
+    // Phase 8: Timeout handling for AI service
+    const aiResult = await Promise.race([
+      aiService.classifyCase(description),
+      new Promise((_, reject) => setTimeout(() => reject(new Error(`AI Classification Timeout (${aiRequestTimeoutMs}ms)`)), aiRequestTimeoutMs))
+    ]);
 
     console.log(`AI classification completed for case ${caseId}:`, aiResult);
 
+    const caseLifecycle = require('../services/caseLifecycle');
+
     // Update case with AI classification results
-    await prisma.case.update({
+    await getPrisma().case.update({
       where: { id: caseId },
       data: {
         aiCategory: aiResult.category,
@@ -39,7 +52,15 @@ const aiWorker = new Worker('ai-processing', async job => {
       },
     });
 
-    console.log(`Case ${caseId} updated with AI classification`);
+    // Auto-transition to Under_Review after AI processing
+    await caseLifecycle.updateCaseStatus(
+      caseId, 
+      'Under_Review', 
+      'AI', 
+      `AI analysis complete. Classified as ${aiResult.category} with ${aiResult.severity} severity.`
+    );
+
+    console.log(`Case ${caseId} updated and transitioned to Under_Review`);
 
     return {
       caseId,
@@ -49,11 +70,16 @@ const aiWorker = new Worker('ai-processing', async job => {
 
   } catch (error) {
     console.error(`AI processing failed for job ${job.id}:`, error);
+    
+    // Phase 6: Sentry Error Tracking
+    Sentry.captureException(error, {
+      extra: { job: job.id, caseId: job.data.caseId }
+    });
 
     // Update case with error status
     if (job.data.caseId) {
       try {
-        await prisma.case.update({
+        await getPrisma().case.update({
           where: { id: job.data.caseId },
           data: {
             aiProcessingError: error.message,

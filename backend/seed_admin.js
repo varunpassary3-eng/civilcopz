@@ -1,6 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
+const dbManager = require('./services/databaseManager');
 const bcrypt = require('bcryptjs');
-const prisma = new PrismaClient();
+const prisma = dbManager.getWriteClient();
 
 async function main() {
   const adminEmail = 'admin@civilcopz.gov';
@@ -12,8 +12,9 @@ async function main() {
 
   if (!existingAdmin) {
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
-    const newAdmin = await prisma.user.create({
+    await prisma.user.create({
       data: {
+        id: 'dev-admin-id',
         email: adminEmail,
         password: hashedPassword,
         role: 'admin'

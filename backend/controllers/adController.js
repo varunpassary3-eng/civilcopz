@@ -1,5 +1,6 @@
 const adService = require('../services/adService');
 
+// eslint-disable-next-line no-unused-vars
 async function getRecommendations(req, res) {
   const { category, severity } = req.query;
 

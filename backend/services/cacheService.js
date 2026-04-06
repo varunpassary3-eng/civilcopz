@@ -26,43 +26,51 @@ class CacheService {
       ? `redis://:${redisPassword}@${redisHost}:${redisPort}`
       : `redis://${redisHost}:${redisPort}`;
 
+    const isStandalone = process.env.ALLOW_MOCK_DB_FALLBACK === 'true';
+    if (!isStandalone) {
+      console.info(`⚡ CivilCOPZ Substrate: Attempting Redis connection at ${redisHost}:${redisPort}...`);
+    }
+
     try {
       this.redisClient = createClient({
         url: redisUrl,
         socket: {
           connectTimeout: 5000,
-          lazyConnect: true,
+          reconnectStrategy: (retries) => {
+            if (isStandalone) return false; // V12.6: Quiet-on-Failure for Resilient Substrate
+            if (retries > 3) return new Error('Retry limit reached');
+            return Math.min(retries * 1000, 3000);
+          }
         }
       });
 
-      await this.redisClient.connect();
-      this.isRedisConnected = true;
-      console.log('✅ Redis cache connected');
-
-      // Handle Redis connection events
+      // Handle Redis connection events first
       this.redisClient.on('error', (err) => {
-        console.error('Redis cache error:', err);
+        if (!isStandalone) {
+          console.error('❌ Redis cache error:', err.message);
+        }
         this.isRedisConnected = false;
       });
 
       this.redisClient.on('connect', () => {
+        console.log('✅ Redis substrate connected');
         this.isRedisConnected = true;
       });
 
-      this.redisClient.on('disconnect', () => {
+      // Non-blocking connection attempt
+      this.redisClient.connect().catch(() => {
+        if (!isStandalone) {
+          console.warn('⚠️  Redis connection deferred: Substrate is currently unreachable. Falling back to local memory cache.');
+        } else {
+          console.log('🛡️ [V12-STANDALONE] Redis Bypass: Operating in Resilient Memory Mode.');
+        }
         this.isRedisConnected = false;
       });
 
     } catch (error) {
-      console.error('❌ Redis connection failed with details:', {
-        host: redisHost,
-        port: redisPort,
-        password: redisPassword ? '[REDACTED]' : undefined,
-        error: error.message,
-        code: error.code,
-        errno: error.errno
-      });
-      console.warn('⚠️ Redis cache not available, using memory cache only:', error.message);
+      if (!isStandalone) {
+        console.error('❌ Redis initialization failure:', error.message);
+      }
       this.isRedisConnected = false;
     }
   }

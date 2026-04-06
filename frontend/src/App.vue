@@ -3,34 +3,87 @@
     <!-- Floating Glassmorphism Header -->
     <header class="sticky top-4 z-50 px-4">
       <nav class="max-w-6xl mx-auto backdrop-blur-md bg-white/70 dark:bg-gov-dark-900/80 border border-white/20 dark:border-gov-dark-800/50 shadow-lg dark:shadow-indigo-500/10 rounded-2xl p-3 px-6 flex justify-between items-center">
-        <router-link to="/" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <router-link
+          to="/"
+          class="flex items-center gap-3 hover:opacity-80 transition-opacity"
+        >
           <div class="w-8 h-8 bg-gov-primary-600 rounded-lg flex items-center justify-center shadow-glow-indigo">
             <span class="text-white font-black text-xs">CP</span>
           </div>
-          <h1 class="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gov-primary-600 to-indigo-400">CivilCOPZ</h1>
+          <h1 class="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gov-primary-600 to-indigo-400">
+            CivilCOPZ
+          </h1>
         </router-link>
 
         <div class="flex items-center gap-6">
-          <div v-if="isLoggedIn" class="hidden md:flex items-center gap-6 text-sm font-bold tracking-tight uppercase">
-            <router-link to="/dashboard" class="hover:text-gov-primary-600 transition-colors">Dashboard</router-link>
-            <router-link to="/catalogue" class="hover:text-gov-primary-600 transition-colors">BrandHub</router-link>
-            <router-link to="/policy" class="hover:text-gov-primary-600 transition-colors">Protocol</router-link>
-            <router-link to="/cases" class="hover:text-gov-primary-600 transition-colors">Archives</router-link>
-            <router-link to="/submit-case" class="hover:text-gov-primary-600 transition-colors">Submit</router-link>
+          <div
+            v-if="isLoggedIn"
+            class="hidden md:flex items-center gap-6 text-sm font-bold tracking-tight uppercase"
+          >
+            <router-link
+              to="/dashboard"
+              class="group-hover:text-gov-primary-600 transition-colors"
+            >
+              Dashboard
+            </router-link>
+            <router-link
+              to="/catalogue"
+              class="hover:text-gov-primary-600 transition-colors"
+            >
+              BrandHub
+            </router-link>
+            <router-link
+              to="/cases"
+              class="hover:text-gov-primary-600 transition-colors"
+            >
+              Archives
+            </router-link>
+            <router-link
+              to="/submit-case"
+              class="hover:text-gov-primary-600 transition-colors"
+            >
+              Submit
+            </router-link>
+            <router-link
+              to="/ai-panel"
+              class="hover:text-gov-primary-600 transition-all flex items-center gap-1.5"
+            >
+              <span class="text-[10px]">🤖</span> Intelligence
+            </router-link>
+            <router-link
+              to="/admin"
+              class="px-3 py-1 bg-gov-primary-600/10 text-gov-primary-600 rounded-lg hover:bg-gov-primary-600 hover:text-white transition-all"
+            >
+              Directorate
+            </router-link>
           </div>
           
-          <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-800 mx-2 hidden md:block"></div>
+          <div class="h-4 w-[1px] bg-slate-200 dark:bg-slate-800 mx-2 hidden md:block" />
 
           <div class="flex items-center gap-3">
             <ThemeToggle />
             <div v-if="isLoggedIn">
-              <button @click="logout" class="px-4 py-1.5 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-100 dark:hover:bg-red-900/40 transition-all active:scale-95">
+              <button
+                class="px-4 py-1.5 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-100 dark:hover:bg-red-900/40 transition-all active:scale-95"
+                @click="logout"
+              >
                 Logout
               </button>
             </div>
-            <div v-else class="flex items-center gap-3">
-              <router-link to="/login" class="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-gov-primary-600">Login</router-link>
-              <router-link to="/register" class="px-4 py-1.5 bg-gov-primary-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-glow-indigo hover:bg-gov-primary-700 transition-all active:scale-95">
+            <div
+              v-else
+              class="flex items-center gap-3"
+            >
+              <router-link
+                to="/login"
+                class="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-gov-primary-600"
+              >
+                Login
+              </router-link>
+              <router-link
+                to="/register"
+                class="px-4 py-1.5 bg-gov-primary-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-glow-indigo hover:bg-gov-primary-700 transition-all active:scale-95"
+              >
                 Register
               </router-link>
             </div>
@@ -62,8 +115,8 @@
 
     <!-- Decorative background elements -->
     <div class="fixed top-0 left-0 w-full h-full -z-10 overflow-hidden pointer-events-none opacity-20 dark:opacity-40">
-      <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-400/30 rounded-full blur-[100px]"></div>
-      <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gov-primary-600/20 rounded-full blur-[100px]"></div>
+      <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-400/30 rounded-full blur-[100px]" />
+      <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gov-primary-600/20 rounded-full blur-[100px]" />
     </div>
   </div>
 </template>
@@ -92,7 +145,7 @@ onMounted(() => {
 
 <style>
 .router-link-active {
-  @apply text-gov-primary-600;
+  color: #4f46e5;
 }
 </style>
 

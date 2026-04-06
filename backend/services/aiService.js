@@ -1,12 +1,26 @@
 const axios = require('axios');
 
+function allowAiMockFallback() {
+  if (process.env.ALLOW_AI_MOCK_FALLBACK !== undefined) {
+    return process.env.ALLOW_AI_MOCK_FALLBACK === 'true';
+  }
+
+  return !['production', 'staging'].includes(process.env.NODE_ENV);
+}
+
 // AI Service for case classification and analysis
 class AIService {
   constructor() {
     this.openaiApiKey = process.env.OPENAI_API_KEY;
-    this.azureOpenaiEndpoint = process.env.AZURE_OPENAI_ENDPOINT;
-    this.azureOpenaiKey = process.env.AZURE_OPENAI_KEY;
-    this.deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini';
+    this.azureOpenaiEndpoint = process.env.AZURE_OPENAI_ENDPOINT || process.env.AZURE_AI_ENDPOINT;
+    this.azureOpenaiKey = process.env.AZURE_OPENAI_KEY || process.env.AZURE_AI_KEY;
+    this.deploymentName =
+      process.env.AZURE_OPENAI_DEPLOYMENT ||
+      process.env.AZURE_AI_DEPLOYMENT ||
+      'gpt-4o-mini';
+    this.openaiBaseUrl = process.env.OPENAI_API_BASE_URL || 'https://api.openai.com/v1';
+    this.requestTimeoutMs = Number(process.env.AI_REQUEST_TIMEOUT_MS || 30000);
+    this.allowMockFallback = allowAiMockFallback();
 
     // Determine which AI provider to use
     this.provider = this.getAIProvider();
@@ -31,6 +45,8 @@ class AIService {
         maxTokens = 150
       } = options;
 
+      await this.maybeInjectChaosFailure();
+
       const prompt = this.buildClassificationPrompt(description);
 
       switch (this.provider) {
@@ -43,8 +59,27 @@ class AIService {
       }
     } catch (error) {
       console.error('AI classification error:', error);
-      // Fallback to mock classification
+      if (!this.allowMockFallback) {
+        throw error;
+      }
+
       return await this.mockClassification(description);
+    }
+  }
+
+  async maybeInjectChaosFailure() {
+    const chaosMode = process.env.CHAOS_AI_FAILURE_MODE;
+    if (!chaosMode) {
+      return;
+    }
+
+    if (chaosMode === 'timeout') {
+      await new Promise((resolve) => setTimeout(resolve, this.requestTimeoutMs + 1000));
+      throw new Error('Injected AI timeout for chaos validation');
+    }
+
+    if (chaosMode === 'error') {
+      throw new Error('Injected AI provider failure for chaos validation');
     }
   }
 
@@ -59,8 +94,10 @@ Please provide a JSON response with the following structure:
   "severity": "High|Medium|Low",
   "confidence": 0.0-1.0,
   "keyIssues": ["issue1", "issue2"],
-  "suggestedAction": "brief recommendation",
-  "relevantLaws": ["Section 2(1)(o)", "Section 14"]
+  "suggestedAction": "brief statutory recommendation",
+  "relevantLaws": ["Section 2(11) Deficiency", "Section 2(47) Unfair Practice"],
+  "statutoryGrounds": "Deficiency in Service | Unfair Trade Practice | Restricted Trade Practice",
+  "limitationPeriod": "2 years from cause of action"
 }
 
 Consider:
@@ -93,7 +130,7 @@ Severity based on:
           'api-key': this.azureOpenaiKey,
           'Content-Type': 'application/json'
         },
-        timeout: 30000
+        timeout: this.requestTimeoutMs
       }
     );
 
@@ -103,7 +140,7 @@ Severity based on:
 
   async classifyWithOpenAI(prompt, options) {
     const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
+      `${this.openaiBaseUrl}/chat/completions`,
       {
         model: options.model,
         messages: [
@@ -119,7 +156,7 @@ Severity based on:
           'Authorization': `Bearer ${this.openaiApiKey}`,
           'Content-Type': 'application/json'
         },
-        timeout: 30000
+        timeout: this.requestTimeoutMs
       }
     );
 

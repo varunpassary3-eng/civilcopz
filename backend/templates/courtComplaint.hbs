@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Times New Roman', Times, serif; color: #000; line-height: 1.6; padding: 60px; font-size: 14px; }
+        .header { text-align: center; margin-bottom: 50px; text-transform: uppercase; }
+        .court-title { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+        .case-number { text-align: right; margin-bottom: 30px; font-weight: bold; }
+        .parties { margin-bottom: 40px; }
+        .party { margin-bottom: 20px; }
+        .vs { text-align: center; font-weight: bold; margin: 20px 0; }
+        .subject { font-weight: bold; text-align: center; text-decoration: underline; margin-bottom: 40px; }
+        .section-title { font-weight: bold; margin-top: 30px; margin-bottom: 10px; text-transform: uppercase; }
+        .content { text-align: justify; }
+        .prayer { margin-top: 40px; font-weight: bold; }
+        .verification { margin-top: 60px; border-top: 1px solid #000; padding-top: 20px; }
+        .signature { margin-top: 80px; text-align: right; }
+        .footer { position: fixed; bottom: 30px; left: 0; right: 0; text-align: center; font-size: 10px; color: #666; border-top: 1px dashed #ccc; padding-top: 10px; }
+        .ledger-box { background: #f9fafb; border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .evidence-hash { font-family: monospace; font-size: 10px; color: #4b5563; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="court-title">BEFORE THE HONORABLE {{forum}}</div>
+        <div>AT {{jurisdictionLocation}}</div>
+    </div>
+
+    <div class="case-number">COMPLAINT NO. ________ OF 2026</div>
+
+    <div class="parties">
+        <div class="party">
+            <strong>{{consumerName}}</strong><br>
+            Residing at: {{consumerAddress}}<br>
+            Email: {{consumerEmail}} | Phone: {{consumerPhone}}<br>
+            ... COMPLAINANT
+        </div>
+
+        <div class="vs">VERSUS</div>
+
+        <div class="party">
+            <strong>{{company}}</strong><br>
+            Having its registered office at: {{companyAddress}}<br>
+            ... OPPOSITE PARTY
+        </div>
+    </div>
+
+    <div class="subject">
+        COMPLAINT UNDER SECTION 35 OF THE CONSUMER PROTECTION ACT, 2019
+    </div>
+
+    <div class="content">
+        <p>The Complainant above-named most respectfully states and submits as under:</p>
+
+        <div class="section-title">1. JURISDICTION (PECUNIARY & TERRITORIAL)</div>
+        <p>That the total value of consideration paid (₹{{considerationPaid}}) and the compensation claimed (₹{{finalCompensationValue}}) totals to ₹{{totalClaimValue}}. As the value is within the pecuniary limits of this Hon'ble Commission, it has the jurisdiction to entertain this complaint.</p>
+        <p>That the cause of action arose within the territorial limits of this Commission as the Complainant resides/works for gain/opposite party carries out business within {{jurisdictionLocation}}.</p>
+
+        <div class="section-title">2. FACTS OF THE GRIEVANCE</div>
+        <p>{{description}}</p>
+
+        <div class="section-title">3. PROCEDURAL HISTORY & LEGAL NOTICE</div>
+        <p>That a pre-litigation Formal Legal Notice was served upon the Opposite Party on {{noticeSentDate}} via multi-channel digital dispatch (Case ID: {{caseId}}). Despite delivery and viewing, the Opposite Party failed to resolve the grievance within the statutory 15-day period.</p>
+        
+        <div class="ledger-box">
+            <strong>Verified Procedural Ledger:</strong>
+            <ul style="list-style: none; padding-left: 0; font-size: 12px;">
+                {{#each events}}
+                <li>• {{timestamp}}: {{eventType}} - Verified by {{actor}} (Hash: {{hash}})</li>
+                {{/each}}
+            </ul>
+        </div>
+
+        <div class="section-title">4. PRAYER / RELIEF SOUGHT</div>
+        <div class="prayer">
+            <p>In view of the facts and circumstances stated above, it is most respectfully prayed that this Hon'ble Commission may be pleased to:</p>
+            <ol>
+                <li>Direct the Opposite Party to refund/pay the amount of ₹{{considerationPaid}} along with interest @ 12% p.a.</li>
+                <li>Direct the Opposite Party to pay ₹{{finalCompensationValue}} as compensation for mental agony, harassment, and deficiency in service.</li>
+                <li>Award litigation costs of ₹15,000 to the Complainant.</li>
+                <li>Pass such other order(s) as this Hon'ble Commission may deem fit in the interest of justice.</li>
+            </ol>
+        </div>
+
+        <div class="verification">
+            <strong>VERIFICATION:</strong>
+            <p>I, <strong>{{consumerName}}</strong>, the Complainant above-named, do hereby solemnly affirm and declare that the contents of paragraphs 1 to 4 are true and correct to my personal knowledge and belief based on the records maintained. Verified at {{jurisdictionLocation}} on this {{todayDate}}.</p>
+        </div>
+
+        <div class="signature">
+            (DEPONENT / COMPLAINANT)<br>
+            <span style="font-size: 10px; font-weight: normal;">[Electronically Verified & Signed via CivilCOPZ]</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        CivilCOPZ Authority Filing Engine | Case ID: {{caseId}} | Evidence Ledger Integrity: SECURE-HASH-LINKED
+    </div>
+</body>
+</html>

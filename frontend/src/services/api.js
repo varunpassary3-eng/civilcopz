@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { setAuthHeader } from './auth';
 
-const api = axios.create({
+// CivilCOPZ National-Grade API Substrate (Phase 11)
+// Enforces Port 4000 as the single backend gateway.
+export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
   timeout: 10000,
 });
@@ -22,9 +24,20 @@ export async function getCaseById(id) {
 
 export async function createCase(caseData) {
   const formData = new FormData();
+  
+  // Append standard fields
   Object.keys(caseData).forEach(key => {
-    if (caseData[key]) formData.append(key, caseData[key]);
+    if (key !== 'documents' && caseData[key] !== undefined && caseData[key] !== null) {
+      formData.append(key, caseData[key]);
+    }
   });
+
+  // Append multiple documents
+  if (caseData.documents && caseData.documents.length > 0) {
+    for (let i = 0; i < caseData.documents.length; i++) {
+      formData.append('documents', caseData.documents[i]);
+    }
+  }
 
   const response = await api.post('/cases', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -32,8 +45,13 @@ export async function createCase(caseData) {
   return response.data;
 }
 
-export async function updateCaseStatus(id, status) {
-  const response = await api.patch(`/cases/${id}/status`, { status });
+export async function updateCaseStatus(id, status, actionDescription = null) {
+  const response = await api.patch(`/cases/${id}/status`, { status, actionDescription });
+  return response.data;
+}
+
+export async function setSatisfaction(id, satisfaction) {
+  const response = await api.patch(`/cases/${id}/satisfaction`, { satisfaction });
   return response.data;
 }
 

@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="40" failures="8" errors="0" time="6.007">
+  <testsuite name="Reputation Engine Substrate (Risk Scoring)" errors="0" failures="1" skipped="0" timestamp="2026-04-04T19:23:26" time="0.766" tests="2">
+    <testcase classname="Reputation Engine Substrate (Risk Scoring) should calculate Critical risk for high-volume of unresolved cases" name="Reputation Engine Substrate (Risk Scoring) should calculate Critical risk for high-volume of unresolved cases" time="0.016">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: &quot;Critical&quot;
+Received: &quot;Critical_High_Risk&quot;
+    at Object.toBe (C:\Users\varun\civilcopz\test\unit\reputation.test.js:35:29)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)</failure>
+    </testcase>
+    <testcase classname="Reputation Engine Substrate (Risk Scoring) should calculate Low risk for resolved cases with good satisfaction" name="Reputation Engine Substrate (Risk Scoring) should calculate Low risk for resolved cases with good satisfaction" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Case Event Ledger Substrate" errors="0" failures="2" skipped="0" timestamp="2026-04-04T19:23:26" time="0.979" tests="6">
+    <testcase classname="Case Event Ledger Substrate should record an event with correct hash linking" name="Case Event Ledger Substrate should record an event with correct hash linking" time="0.109">
+    </testcase>
+    <testcase classname="Case Event Ledger Substrate should verify integrity of a valid chain" name="Case Event Ledger Substrate should verify integrity of a valid chain" time="0.002">
+    </testcase>
+    <testcase classname="Case Event Ledger Substrate should detect a broken chain (mismatched prevHash)" name="Case Event Ledger Substrate should detect a broken chain (mismatched prevHash)" time="0.006">
+    </testcase>
+    <testcase classname="Case Event Ledger Substrate should detect forensic hash mismatch (Unauthorized Content Modification)" name="Case Event Ledger Substrate should detect forensic hash mismatch (Unauthorized Content Modification)" time="0.003">
+    </testcase>
+    <testcase classname="Case Event Ledger Substrate Forensic Anchor Layer should generate a daily root hash for external anchoring" name="Case Event Ledger Substrate Forensic Anchor Layer should generate a daily root hash for external anchoring" time="0.007">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;upsert&apos;)
+    at Object.upsert (C:\Users\varun\civilcopz\test\unit\ledger.test.js:121:40)
+    at Promise.then.completed (C:\Users\varun\civilcopz\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\varun\civilcopz\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at _runTest (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\varun\civilcopz\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\varun\civilcopz\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\varun\civilcopz\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\varun\civilcopz\node_modules\jest-runner\build\runTest.js:444:34)
+    at Object.worker (C:\Users\varun\civilcopz\node_modules\jest-runner\build\testWorker.js:106:12)</failure>
+    </testcase>
+    <testcase classname="Case Event Ledger Substrate Forensic Anchor Layer should match external anchored hash (Independent Verification)" name="Case Event Ledger Substrate Forensic Anchor Layer should match external anchored hash (Independent Verification)" time="0.001">
+      <failure>TypeError: Cannot read properties of undefined (reading &apos;findUnique&apos;)
+    at Object.findUnique (C:\Users\varun\civilcopz\test\unit\ledger.test.js:130:40)
+    at Promise.then.completed (C:\Users\varun\civilcopz\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\varun\civilcopz\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at _runTest (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:121:9)
+    at _runTestsForDescribeBlock (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\varun\civilcopz\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\varun\civilcopz\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\varun\civilcopz\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\varun\civilcopz\node_modules\jest-runner\build\runTest.js:444:34)
+    at Object.worker (C:\Users\varun\civilcopz\node_modules\jest-runner\build\testWorker.js:106:12)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Socket Telemetry Substrate (Signal Distribution)" errors="0" failures="1" skipped="0" timestamp="2026-04-04T19:23:26" time="1.107" tests="2">
+    <testcase classname="Socket Telemetry Substrate (Signal Distribution) should emit update event to correct room" name="Socket Telemetry Substrate (Signal Distribution) should emit update event to correct room" time="0.069">
+      <failure>Error: expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+Expected: &quot;case_CASE-XYZ-888&quot;
+
+Number of calls: 0
+    at Object.toHaveBeenCalledWith (C:\Users\varun\civilcopz\test\integration\socket.test.js:36:21)
+    at Promise.then.completed (C:\Users\varun\civilcopz\node_modules\jest-circus\build\utils.js:290:26)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (C:\Users\varun\civilcopz\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at _runTest (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\varun\civilcopz\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\varun\civilcopz\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\varun\civilcopz\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\varun\civilcopz\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\varun\civilcopz\node_modules\jest-runner\build\runTest.js:444:34)
+    at Object.worker (C:\Users\varun\civilcopz\node_modules\jest-runner\build\testWorker.js:106:12)</failure>
+    </testcase>
+    <testcase classname="Socket Telemetry Substrate (Signal Distribution) Forensic Timing: should emit update only after persistence layer check" name="Socket Telemetry Substrate (Signal Distribution) Forensic Timing: should emit update only after persistence layer check" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="Input Validation Substrate (Zod)" errors="0" failures="0" skipped="0" timestamp="2026-04-04T19:23:27" time="0.152" tests="7">
+    <testcase classname="Input Validation Substrate (Zod) KYC &amp; Case Validation (createCaseSchema) should accept valid case data" name="Input Validation Substrate (Zod) KYC &amp; Case Validation (createCaseSchema) should accept valid case data" time="0.004">
+    </testcase>
+    <testcase classname="Input Validation Substrate (Zod) KYC &amp; Case Validation (createCaseSchema) should reject incomplete identity (missing consumerName)" name="Input Validation Substrate (Zod) KYC &amp; Case Validation (createCaseSchema) should reject incomplete identity (missing consumerName)" time="0.005">
+    </testcase>
+    <testcase classname="Input Validation Substrate (Zod) KYC &amp; Case Validation (createCaseSchema) should reject invalid email format" name="Input Validation Substrate (Zod) KYC &amp; Case Validation (createCaseSchema) should reject invalid email format" time="0.003">
+    </testcase>
+    <testcase classname="Input Validation Substrate (Zod) KYC &amp; Case Validation (createCaseSchema) should reject if legal declaration is false" name="Input Validation Substrate (Zod) KYC &amp; Case Validation (createCaseSchema) should reject if legal declaration is false" time="0.001">
+    </testcase>
+    <testcase classname="Input Validation Substrate (Zod) File Integrity Validation (fileUploadSchema) should accept PDF files under 5MB" name="Input Validation Substrate (Zod) File Integrity Validation (fileUploadSchema) should accept PDF files under 5MB" time="0.002">
+    </testcase>
+    <testcase classname="Input Validation Substrate (Zod) File Integrity Validation (fileUploadSchema) should reject non-PDF files" name="Input Validation Substrate (Zod) File Integrity Validation (fileUploadSchema) should reject non-PDF files" time="0.002">
+    </testcase>
+    <testcase classname="Input Validation Substrate (Zod) File Integrity Validation (fileUploadSchema) should reject files over 5MB" name="Input Validation Substrate (Zod) File Integrity Validation (fileUploadSchema) should reject files over 5MB" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="Governance Engine (CPA 2019 Revision)" errors="0" failures="0" skipped="0" timestamp="2026-04-04T19:23:27" time="0.475" tests="13">
+    <testcase classname="Governance Engine (CPA 2019 Revision) Pecuniary Jurisdiction (mapForum) should classify as DISTRICT for claim &lt;= 50 Lakh" name="Governance Engine (CPA 2019 Revision) Pecuniary Jurisdiction (mapForum) should classify as DISTRICT for claim &lt;= 50 Lakh" time="0.001">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Pecuniary Jurisdiction (mapForum) should classify as STATE for claim &gt; 50 Lakh and &lt;= 2 Crore" name="Governance Engine (CPA 2019 Revision) Pecuniary Jurisdiction (mapForum) should classify as STATE for claim &gt; 50 Lakh and &lt;= 2 Crore" time="0.002">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Pecuniary Jurisdiction (mapForum) should classify as NATIONAL for claim &gt; 2 Crore" name="Governance Engine (CPA 2019 Revision) Pecuniary Jurisdiction (mapForum) should classify as NATIONAL for claim &gt; 2 Crore" time="0">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Statutory Filing Fee (calculateFilingFee) should be FREE for claim &lt;= 5 Lakh" name="Governance Engine (CPA 2019 Revision) Statutory Filing Fee (calculateFilingFee) should be FREE for claim &lt;= 5 Lakh" time="0.001">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Statutory Filing Fee (calculateFilingFee) should be ₹200 for claim up to 10 Lakh" name="Governance Engine (CPA 2019 Revision) Statutory Filing Fee (calculateFilingFee) should be ₹200 for claim up to 10 Lakh" time="0">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Statutory Filing Fee (calculateFilingFee) should be ₹1000 for claim up to 50 Lakh" name="Governance Engine (CPA 2019 Revision) Statutory Filing Fee (calculateFilingFee) should be ₹1000 for claim up to 50 Lakh" time="0.001">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Statutory Filing Fee (calculateFilingFee) should be ₹2000 for claim up to 1 Crore" name="Governance Engine (CPA 2019 Revision) Statutory Filing Fee (calculateFilingFee) should be ₹2000 for claim up to 1 Crore" time="0">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Statutory Filing Fee (calculateFilingFee) should cap at ₹10000 for extremely high claims" name="Governance Engine (CPA 2019 Revision) Statutory Filing Fee (calculateFilingFee) should cap at ₹10000 for extremely high claims" time="0.001">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Time Manipulation Resistance (Forensic Integrity) should ignore client-side system clock spoofing" name="Governance Engine (CPA 2019 Revision) Time Manipulation Resistance (Forensic Integrity) should ignore client-side system clock spoofing" time="0.001">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Time Manipulation Resistance (Forensic Integrity) should use Database as the Sovereign Time Authority" name="Governance Engine (CPA 2019 Revision) Time Manipulation Resistance (Forensic Integrity) should use Database as the Sovereign Time Authority" time="0.342">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Compensation Realism Advisory (getAdvisory) should flag CRITICAL if compensation &gt;= 5x consideration" name="Governance Engine (CPA 2019 Revision) Compensation Realism Advisory (getAdvisory) should flag CRITICAL if compensation &gt;= 5x consideration" time="0.001">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Compensation Realism Advisory (getAdvisory) should flag WARNING if compensation &gt;= 2x consideration" name="Governance Engine (CPA 2019 Revision) Compensation Realism Advisory (getAdvisory) should flag WARNING if compensation &gt;= 2x consideration" time="0.001">
+    </testcase>
+    <testcase classname="Governance Engine (CPA 2019 Revision) Compensation Realism Advisory (getAdvisory) should identify STABLE ratio" name="Governance Engine (CPA 2019 Revision) Compensation Realism Advisory (getAdvisory) should identify STABLE ratio" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Statutory Enforcement Substrate (Worker)" errors="0" failures="2" skipped="0" timestamp="2026-04-04T19:23:26" time="1.789" tests="3">
+    <testcase classname="Statutory Enforcement Substrate (Worker) should identify and escalate expired cases" name="Statutory Enforcement Substrate (Worker) should identify and escalate expired cases" time="0.369">
+      <failure>Error: expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+Expected: &quot;CASE-EXP-001&quot;, &quot;Escalated_to_Authority&quot;, &quot;System&quot;, Any&lt;String&gt;
+
+Number of calls: 0
+    at Object.toHaveBeenCalledWith (C:\Users\varun\civilcopz\test\integration\worker.test.js:44:48)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)</failure>
+    </testcase>
+    <testcase classname="Statutory Enforcement Substrate (Worker) should ignore cases within the statutory window" name="Statutory Enforcement Substrate (Worker) should ignore cases within the statutory window" time="0.003">
+    </testcase>
+    <testcase classname="Statutory Enforcement Substrate (Worker) should be idempotent (multiple cron runs should not duplicate events)" name="Statutory Enforcement Substrate (Worker) should be idempotent (multiple cron runs should not duplicate events)" time="0.006">
+      <failure>Error: expect(jest.fn()).toHaveBeenCalledTimes(expected)
+
+Expected number of calls: 1
+Received number of calls: 0
+    at Object.toHaveBeenCalledTimes (C:\Users\varun\civilcopz\test\integration\worker.test.js:84:48)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="CVE Chaos &amp; Resilience Substrate" errors="0" failures="1" skipped="0" timestamp="2026-04-04T19:23:26" time="2.056" tests="2">
+    <testcase classname="CVE Chaos &amp; Resilience Substrate Worker Crash Recovery: should resume monitoring from last consistent state" name="CVE Chaos &amp; Resilience Substrate Worker Crash Recovery: should resume monitoring from last consistent state" time="0.142">
+      <failure>Error: expect(jest.fn()).toHaveBeenCalled()
+
+Expected number of calls: &gt;= 1
+Received number of calls:    0
+    at Object.toHaveBeenCalled (C:\Users\varun\civilcopz\test\integration\chaos.test.js:41:40)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)</failure>
+    </testcase>
+    <testcase classname="CVE Chaos &amp; Resilience Substrate DB Latency Resilience: should handle delayed queries gracefully" name="CVE Chaos &amp; Resilience Substrate DB Latency Resilience: should handle delayed queries gracefully" time="0.11">
+    </testcase>
+  </testsuite>
+  <testsuite name="AFE Filing Substrate (PDF Generation)" errors="0" failures="0" skipped="0" timestamp="2026-04-04T19:23:27" time="1.4" tests="3">
+    <testcase classname="AFE Filing Substrate (PDF Generation) should generate a complaint PDF for a valid case" name="AFE Filing Substrate (PDF Generation) should generate a complaint PDF for a valid case" time="0.173">
+    </testcase>
+    <testcase classname="AFE Filing Substrate (PDF Generation) should bundle a full litigation package" name="AFE Filing Substrate (PDF Generation) should bundle a full litigation package" time="0.149">
+    </testcase>
+    <testcase classname="AFE Filing Substrate (PDF Generation) Forensic Content: Generated Complaint must contain key legal clauses" name="AFE Filing Substrate (PDF Generation) Forensic Content: Generated Complaint must contain key legal clauses" time="0.28">
+    </testcase>
+  </testsuite>
+  <testsuite name="Adversarial Litigation Scenario: Hostile Company Resistance" errors="0" failures="0" skipped="0" timestamp="2026-04-04T19:23:26" time="4.918" tests="1">
+    <testcase classname="Adversarial Litigation Scenario: Hostile Company Resistance Should automatically escalate despite company non-response after statutory period" name="Adversarial Litigation Scenario: Hostile Company Resistance Should automatically escalate despite company non-response after statutory period" time="0.113">
+    </testcase>
+    <testcase classname=" Test execution failure: could be caused by test hooks like &apos;afterAll&apos;." name=" Test execution failure: could be caused by test hooks like &apos;afterAll&apos;." time="0">
+      <failure>{&quot;message&quot;:&quot;&quot;,&quot;stack&quot;:&quot;Error: Server is not running.\n    at Server.close (node:net:2367:12)\n    at Object.onceWrapper (node:events:622:28)\n    at Server.emit (node:events:520:35)\n    at Server.emit (node:domain:489:12)\n    at emitCloseNT (node:net:2427:8)\n    at processTicksAndRejections (node:internal/process/task_queues:89:21)&quot;}</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="CivilCOPZ End-to-End Litigation Lifecycle" errors="0" failures="1" skipped="0" timestamp="2026-04-04T19:23:26" time="5.052" tests="1">
+    <testcase classname="CivilCOPZ End-to-End Litigation Lifecycle Full Journey: Submission -&gt; Notice -&gt; Expiry -&gt; Filing Package" name="CivilCOPZ End-to-End Litigation Lifecycle Full Journey: Submission -&gt; Notice -&gt; Expiry -&gt; Filing Package" time="0.144">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 201
+Received: 401
+    at Object.toBe (C:\Users\varun\civilcopz\test\e2e\lifecycle.test.js:79:38)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)</failure>
+    </testcase>
+    <testcase classname=" Test execution failure: could be caused by test hooks like &apos;afterAll&apos;." name=" Test execution failure: could be caused by test hooks like &apos;afterAll&apos;." time="0">
+      <failure>{&quot;message&quot;:&quot;&quot;,&quot;stack&quot;:&quot;Error: Server is not running.\n    at Server.close (node:net:2367:12)\n    at Object.onceWrapper (node:events:622:28)\n    at Server.emit (node:events:520:35)\n    at Server.emit (node:domain:489:12)\n    at emitCloseNT (node:net:2427:8)\n    at processTicksAndRejections (node:internal/process/task_queues:89:21)&quot;}</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

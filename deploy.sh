@@ -8,16 +8,25 @@ set -e
 echo "🚀 CivilCOPZ National Scale Deployment Script"
 echo "=============================================="
 
-# Check if .env.prod exists
-if [ ! -f ".env.prod" ]; then
-    echo "❌ Error: .env.prod file not found!"
-    echo "Please copy .env.prod.example to .env.prod and configure your environment variables."
+# Check for configuration (Default to .env.prod unless --staging is passed)
+ENV_FILE=".env.prod"
+STAGING_MODE=false
+
+if [[ "$1" == "--staging" ]]; then
+    ENV_FILE=".env.staging"
+    STAGING_MODE=true
+    echo "🏗️  STAGING MODE ENABLED"
+fi
+
+if [ ! -f "$ENV_FILE" ]; then
+    echo "❌ Error: $ENV_FILE file not found!"
+    echo "Please configure your environment variables."
     exit 1
 fi
 
 # Load environment variables
 set -a
-source .env.prod
+source $ENV_FILE
 set +a
 
 echo "✅ Environment configuration loaded"
@@ -42,6 +51,22 @@ fi
 
 echo "✅ Prerequisites check passed"
 
+# Phase 3: Security Readiness Audit
+echo "🛡️  Performing security readiness audit..."
+if [ -z "$SENTRY_DSN" ]; then
+    echo "⚠️  Warning: SENTRY_DSN not set. Error tracking will be disabled."
+fi
+
+if [ ! -d "nginx/ssl" ] || [ -z "$(ls -A nginx/ssl)" ]; then
+    echo "⚠️  Warning: No SSL certificates found in nginx/ssl. Direct HTTPS will fail."
+fi
+
+if [ -z "$JWT_SECRET" ] || [ "$JWT_SECRET" == "changeme" ]; then
+    echo "❌ ERROR: Insecure JWT_SECRET detected. Aborting."
+    exit 1
+fi
+echo "✅ Security audit passed"
+
 # Create necessary directories
 echo "📁 Creating necessary directories..."
 mkdir -p monitoring/grafana/provisioning/datasources
@@ -58,10 +83,15 @@ echo "✅ Directories created"
 echo "🐳 Building and starting services..."
 
 # Stop any existing containers
-docker-compose -f docker-compose.prod.yml down || true
+COMPOSE_FILE="docker-compose.prod.yml"
+if [ "$STAGING_MODE" = true ]; then
+    COMPOSE_FILE="docker-compose.staging.yml"
+fi
+
+docker-compose -f $COMPOSE_FILE down || true
 
 # Build and start all services
-docker-compose -f docker-compose.prod.yml up -d --build
+docker-compose -f $COMPOSE_FILE up -d --build
 
 echo "⏳ Waiting for services to be healthy..."
 

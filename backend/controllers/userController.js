@@ -1,5 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const dbManager = require('../services/databaseManager');
+
+const getPrisma = () => dbManager.getWriteClient();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -10,13 +11,13 @@ async function register(req, res) {
   const { email, password, role } = req.body;
 
   try {
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await getPrisma().user.findUnique({ where: { email } });
     if (existing) {
       return res.status(409).json({ error: 'Email already in use' });
     }
 
     const hashed = await bcrypt.hash(password, 12); // Increased rounds for better security
-    const user = await prisma.user.create({
+    const user = await getPrisma().user.create({
       data: {
         email,
         password: hashed,
@@ -40,13 +41,15 @@ async function login(req, res) {
   const { email, password } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await getPrisma().user.findUnique({ where: { email } });
     if (!user) {
+      console.warn(`🕵️ [AUTH_FAILURE] Login attempt for NON-EXISTENT account: ${email}`);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
+      console.warn(`🕵️ [AUTH_FAILURE] Password MISMATCH for account: ${email}`);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 

@@ -4,7 +4,7 @@ const { z } = require('zod');
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.enum(['consumer', 'admin']).default('consumer'),
+  role: z.enum(['consumer', 'admin', 'ADVOCATE']).default('consumer'),
 });
 
 const loginSchema = z.object({
@@ -14,15 +14,38 @@ const loginSchema = z.object({
 
 // Case validation schemas
 const createCaseSchema = z.object({
+  // Consumer Details
+  consumerName: z.string().min(2).max(100),
+  consumerEmail: z.string().email(),
+  consumerPhone: z.string().min(10).max(15),
+  consumerAddress: z.string().min(10).max(500),
+
+  // Case Details
   title: z.string().min(5).max(200),
   description: z.string().min(10).max(2000),
   company: z.string().min(2).max(100),
   category: z.enum(['Telecom', 'Banking', 'Insurance', 'E-Commerce', 'Other']),
   jurisdiction: z.enum(['District', 'State', 'National']),
+  
+  // Pecuniary Fields (Handled via Multer Strings)
+  considerationPaid: z.coerce.number().nonnegative().optional(),
+  expectedCompensationClient: z.coerce.number().nonnegative().optional(),
+  
+  // Legal Declaration (Coerced from Multer String)
+  isDeclaredTrue: z.coerce.boolean().refine(val => val === true, {
+    message: "You must accept the legal declaration to proceed."
+  }),
+  declaredName: z.string().min(2).max(100),
 });
 
 const updateStatusSchema = z.object({
-  status: z.enum(['Pending', 'Review', 'Resolved']),
+  status: z.enum([
+    'Draft', 'Submitted', 'Under_Review', 'Notice_Sent', 
+    'Company_Responded', 'Negotiation_Mediation', 'Escalated_to_Authority', 
+    'Court_Filed', 'Judgment_Issued', 'Resolved', 
+    'Satisfaction_Confirmed', 'Closed'
+  ]),
+  actionDescription: z.string().optional(),
 });
 
 // File validation schema
@@ -62,15 +85,16 @@ function validate(schema) {
 // File validation middleware
 function validateFile(schema) {
   return (req, res, next) => {
-    if (!req.file) {
-      return res.status(400).json({
-        error: 'File is required'
-      });
+    const files = req.files || (req.file ? [req.file] : []);
+    if (files.length === 0) {
+      // Phase 12: File is now optional for Draft/Submitted stages
+      return next();
     }
 
     try {
-      const validatedFile = schema.parse(req.file);
-      req.validatedFile = validatedFile;
+      const validatedFiles = files.map(file => schema.parse(file));
+      req.validatedFile = req.file ? validatedFiles[0] : null;
+      req.validatedFiles = validatedFiles;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {

@@ -1,0 +1,10 @@
+{
+  "consumer": {
+    "name": "Test User"
+  },
+  "claim": {
+    "considerationPaid": 10000,
+    "compensationClaimed": 1000000
+  },
+  "missingSignature": true
+}

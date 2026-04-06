@@ -1,14 +1,14 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+const dbManager = require('../services/databaseManager');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const getPrisma = () => dbManager.getReadClient();
 
 // Health check endpoint
 router.get('/health', async (req, res) => {
   try {
     // Check database connection
-    await prisma.$queryRaw`SELECT 1`;
+    await getPrisma().$queryRaw`SELECT 1`;
 
     res.status(200).json({
       status: 'healthy',
@@ -36,7 +36,7 @@ router.get('/health', async (req, res) => {
 router.get('/ready', async (req, res) => {
   try {
     // Check database connection and basic query
-    const userCount = await prisma.user.count();
+    const userCount = await getPrisma().user.count();
 
     res.status(200).json({
       status: 'ready',

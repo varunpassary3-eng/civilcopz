@@ -8,15 +8,38 @@ datasource db {
 }
 
 model User {
-  id       String   @id @default(cuid())
-  email    String   @unique
-  password String
-  role     UserRole @default(consumer)
-  createdAt DateTime @default(now())
-  cases    Case[]   @relation("ReporterCases")
-  auditLogs AuditLog[]
+  id                   String   @id @default(cuid())
+  email                String   @unique
+  password             String
+  role                 UserRole @default(consumer)
+  
+  // Professional Credentials
+  barCouncilId         String?  // Mandatory for Advocates
+  isVerifiedProfessional Boolean @default(false)
+  specialization       String?
+
+  createdAt            DateTime @default(now())
+  cases                Case[]   @relation("ReporterCases")
+  advocateCases        Case[]   @relation("AdvocateCases")
+  auditLogs            AuditLog[]
+  devices              UserDevice[]
+  kycRecords           UserKYC[]
 
   @@map("users")
+}
+
+model Notary {
+  id               String   @id @default(uuid())
+  name             String
+  address          String
+  jurisdiction     String   // City/Dist matching Case.jurisdiction
+  contact          String?
+  fees             Float?   @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+
+  @@map("notaries")
+  @@index([jurisdiction])
 }
 
 model Company {
@@ -27,83 +50,162 @@ model Company {
   rating      Float    @default(0)
   cases       Case[]
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
 
   @@map("companies")
   @@index([name])
 }
 
 model Case {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  company     String
-  category    String
-  jurisdiction String
-  status      CaseStatus @default(Pending)
-  filePath    String?
+  id                         String    @id @default(cuid())
+  title                      String
+  description                String
+  company                    String
+  companyId                  String?
+  category                   String?   @default("Other")
+  jurisdiction               String?   
+  status                     CaseStatus @default(Submitted)
+  satisfaction               String?   // Satisfied / Unsatisfied
+  
+  // Pecuniary Jurisdiction (AFE)
+  considerationPaid          Float?
+  expectedCompensationClient   Float?
+  proposedCompensationAdvocate Float?  // Verified by professional
+  finalCourtClaimValue         Float?  // Authoritative value for filing
+  
+  // Filing Preferences
+  filingMode                 String?   @default("BOTH") // SPEED_POST | ONLINE | BOTH
+  statutoryFee               Float?    // Fee calculation based on Rule 7
+
+  // Court Tracking (eCourts Integrated)
+  caseNumber                 String?   // Assigned by Commission
+  hearingDates               Json?     // List of scheduled hearings
+  nextHearingAt              DateTime? // For HUD alert
+
+  // Professional Review Substrate
+  reviewStatus               String?   @default("PENDING") // PENDING | NEEDS_CORRECTION | APPROVED
+  reviewNotes                String?   
+  reviewedBy                 String?   // Advocate/Professional ID
+  reviewedAt                 DateTime?
 
   // AI Classification Fields
   aiCategory        String?
   aiSeverity        String?
   aiConfidence      Float?
-  aiKeyIssues       String[]  // Array of key issues identified
+  aiKeyIssues       String[]  
   aiSuggestedAction String?
-  aiRelevantLaws    String[]  // Array of relevant laws/sections
+  aiRelevantLaws    String[]  
   aiProcessedAt     DateTime?
-  aiProcessingError String?
 
-  createdAt   DateTime @default(now())
-  reporter    User?    @relation("ReporterCases", fields: [reporterId], references: [id])
-  reporterId  String?
+  // Procedural Facts (Sovereign Context)
+  isDeclaredTrue     Boolean   @default(false)
+  declaredName       String?   
+  declarationAcceptedAt DateTime?
+  ipAddress          String?   
+  userAgent          String?   
   
-  companyRef  Company? @relation(fields: [companyId], references: [id])
-  companyId   String?
+  // Consumer KYC Snapshot (Judicial Requirement)
+  consumerName       String?
+  consumerEmail      String?
+  consumerPhone      String?
+  consumerAddress    String?
+  
+  noticeUrl          String?   
+  noticeHash         String?   
+  noticeSentAt       DateTime? 
+  noticeDeadline     DateTime? 
+  noticeStatus       String?   // SENT | READ | EXPIRED | ESCALATED
 
-  timeline    CaseTimeline[]
+  // Relations
+  events             CaseEvent[]
+  documents          CaseDocument[]
+  timeline           CaseTimeline[]
+  noticeDeliveries   CaseNoticeDelivery[]
+  evidenceLedger     EvidenceIntegrityLedger[]
+  chainOfCustody     ChainOfCustody[]
+  evidencePackages   EvidencePackage[]
+  certificates65B    Certificate65B[]
+  
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @default(now()) @updatedAt
+  
+  // Court-Connected (v3.0)
+  signed             Boolean   @default(false)
+  signatureProvider  String?
+  signatureTxnId     String?
+  signedAt           DateTime?
+  certificateHash    String?
+  registryStatus     String?   @default("DRAFT") // DRAFT | SUBMITTED | SCRUTINY | ACCEPTED | REGISTERED
+  
+  registrySubmissions CaseRegistrySubmission[]
+  
+  // Staged Migration: Legacy 1:1 relation to be dropped after backfill verification (v5.1.1)
+  legacySubmissionId String?   @unique
+  legacySubmission   CaseRegistrySubmission? @relation("LegacySubmission", fields: [legacySubmissionId], references: [id])
+  
+  // Professional Advocacy (v6.0)
+  advocateId         String?
+  advocate           User?     @relation("AdvocateCases", fields: [advocateId], references: [id])
+  vakalatnamaUrl     String?
+  representationStatus String? @default("DRAFT") // DRAFT | REQUESTED | ACCEPTED
+  
+  companyRef         Company?  @relation(fields: [companyId], references: [id])
+  reporter           User?     @relation("ReporterCases", fields: [reporterId], references: [id])
+  reporterId         String?
 
   @@map("cases")
   @@index([company])
   @@index([status])
+  @@index([title])
   @@index([createdAt])
-  @@index([aiCategory])
-  @@index([aiSeverity])
 }
 
-model AdvisoryService {
-  id              String   @id @default(cuid())
-  name            String
-  type            ServiceType @default(ADVISORY)
-  description     String
-  category        String   // Matches Case.category for integration
-  specialization  String[]
-  contactEmail    String?
-  contactPhone    String?
-  website         String?
-  isProBono       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+model CaseNoticeDelivery {
+  id               String   @id @default(uuid())
+  caseId           String
+  case             Case     @relation(fields: [caseId], references: [id])
+  channel          DeliveryChannel
+  status           DeliveryStatus
+  awarenessLevel   String?  @default("LOW") // LOW | MED | HIGH (Evidentiary Tier)
+  trackingId       String?
+  dispatchedAt     DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
 
-  @@map("advisory_services")
-  @@index([category])
-  @@index([type])
+  @@map("case_notice_deliveries")
+  @@index([caseId])
+  @@index([status])
 }
 
-enum CaseStatus {
-  Pending
-  Review
-  Resolved
+model CaseEvent {
+  id          String   @id @default(uuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id])
+  eventType   String   // NOTICE_SENT, NOTICE_READ, NOTICE_EXPIRED, etc.
+  payload     Json?    
+  actor       String   
+  source      String   
+  prevHash    String?  
+  hash        String   
+  timestamp   DateTime @default(now())
+  sourceRef   String?  // External Txn/Event ID for idempotency mapping
+
+  @@map("case_events")
+  @@unique([caseId, eventType, sourceRef])
+  @@index([caseId])
+  @@index([eventType])
 }
 
-enum UserRole {
-  consumer
-  admin
-}
+model CaseDocument {
+  id          String   @id @default(cuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id])
+  fileUrl     String
+  fileHash    String   
+  type        String   @default("evidence") // invoice, annexure_a, affidavit, etc.
+  uploadedAt  DateTime @default(now())
 
-enum ServiceType {
-  ADVISORY
-  LEGAL_AID
-  PRIVATE_ADVOCATE
+  @@map("case_documents")
+  @@index([caseId])
 }
 
 model CaseTimeline {
@@ -112,10 +214,128 @@ model CaseTimeline {
   case      Case     @relation(fields: [caseId], references: [id])
   action    String
   status    CaseStatus
+  actor     String?
   timestamp DateTime @default(now())
 
   @@map("case_timeline")
   @@index([caseId])
+}
+
+model DailyLedgerHash {
+  id               String   @id @default(uuid())
+  date             DateTime @unique
+  rootHash         String   
+  eventCount       Int
+  trustedTimestamp String?  // RFC 3161 timestamp token (v4.2)
+  createdAt        DateTime @default(now())
+
+  @@map("daily_ledger_hashes")
+}
+
+model EvidenceIntegrityLedger {
+  id                String   @id @default(cuid())
+  caseId            String
+  case              Case     @relation(fields: [caseId], references: [id])
+  evidenceId        String   // Document or Event ID
+  evidenceType      String   // DOCUMENT | EVENT | NOTICE
+  contentHash       String   // SHA-256 of content
+  metadataHash      String   // SHA-256 of metadata
+  previousHash      String?  // Chain previous entry
+  signature         String   // KMS signature of hash
+  timestamp         DateTime @default(now())
+  trustedTimestamp  String?  // RFC 3161 timestamp token
+  timestampAuthority String? // TSA URL used
+  actor             String   // User/Process that created
+  ipAddress         String?
+  userAgent         String?
+
+  @@map("evidence_integrity_ledger")
+  @@index([caseId])
+  @@index([evidenceId])
+  @@index([timestamp])
+}
+
+model AuditTrail {
+  id                String   @id @default(cuid())
+  entityType        String   // CASE | USER | COMPANY | DOCUMENT
+  entityId          String
+  action            String   // CREATE | UPDATE | DELETE | VIEW | APPROVE
+  oldValues         Json?    // Previous state
+  newValues         Json?    // New state
+  changes           Json?    // Diff of changes
+  actorId           String   // User ID
+  actorRole         String   // User role
+  timestamp         DateTime @default(now())
+  ipAddress         String?
+  userAgent         String?
+  sessionId         String?
+  integrityHash     String   // SHA-256 of audit entry
+  blockHash         String?  // Links to daily ledger
+
+  @@map("audit_trail")
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([timestamp])
+}
+
+model IntegrityVerification {
+  id                String   @id @default(cuid())
+  verificationType  String   // DAILY_LEDGER | CASE_CHAIN | EVIDENCE_INTEGRITY
+  targetId          String   // Case ID, Date, etc.
+  expectedHash      String
+  actualHash        String
+  isValid           Boolean
+  verifiedAt        DateTime @default(now())
+  verifiedBy        String   // System or User ID
+
+  @@map("integrity_verifications")
+  @@index([verificationType])
+  @@index([targetId])
+}
+
+model ChainOfCustody {
+  id                String   @id @default(cuid())
+  caseId            String
+  case              Case     @relation(fields: [caseId], references: [id])
+  evidenceId        String   // Document or Event ID
+  action            String   // UPLOAD | ACCESS | MODIFY | TRANSFER | SEAL
+  fromActor         String?  // Previous custodian
+  toActor           String   // Current custodian
+  reason            String?  // Reason for transfer
+  transferMethod    String?  // ELECTRONIC | PHYSICAL | SECURE_LINK
+  digitalSignature  String   // Signature of custody record
+  timestamp         DateTime @default(now())
+  trustedTimestamp  String?  // RFC 3161 timestamp token
+  ipAddress         String?
+  userAgent         String?
+  deviceFingerprint String?  // Device identification
+
+  @@map("chain_of_custody")
+  @@index([caseId])
+  @@index([evidenceId])
+  @@index([timestamp])
+}
+
+model EvidencePackage {
+  id                String   @id @default(cuid())
+  caseId            String
+  case              Case     @relation(fields: [caseId], references: [id])
+  packageId         String   @unique // UUID for external reference
+  packageType       String   // COURT_DOSSIER | EVIDENCE_BUNDLE | AUDIT_REPORT
+  title             String
+  description       String?
+  contents          Json     // List of included evidence IDs and metadata
+  masterHash        String   // Hash of entire package
+  signature         String   // KMS signature
+  trustedTimestamp  String?  // RFC 3161 timestamp token
+  sealedAt          DateTime @default(now())
+  sealedBy          String
+  packageUrl        String?  // URL to download package
+  isCourtAdmissible Boolean  @default(true)
+
+  @@map("evidence_packages")
+  @@index([caseId])
+  @@index([packageId])
 }
 
 model AuditLog {
@@ -129,3 +349,210 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model AdvisoryService {
+  id              String   @id @default(cuid())
+  name            String
+  type            ServiceType @default(ADVISORY)
+  description     String
+  category        String   
+  specialization  String[]
+  isProBono       Boolean  @default(false)
+  
+  // Reputation & Integrity (v8.0)
+  reputationScore Float    @default(100)
+  isAdEligible    Boolean  @default(true) // Switch to blacklist offenders
+  
+  contactEmail    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("advisory_services")
+}
+
+enum CaseStatus {
+  Draft
+  Submitted
+  Under_Review
+  Notice_Sent
+  Company_Responded
+  Negotiation_Mediation
+  Escalated_to_Authority
+  Court_Filed
+  Judgment_Issued
+  Resolved
+  Satisfaction_Confirmed
+  Closed
+}
+
+enum UserRole {
+  consumer
+  admin
+  ADVOCATE
+}
+
+enum ServiceType {
+  ADVISORY
+  LEGAL_AID
+  PRIVATE_ADVOCATE
+}
+
+enum DeliveryChannel {
+  EMAIL
+  WHATSAPP
+  POST
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model UserDevice {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  fingerprint   String   @unique
+  deviceInfo    Json     // User agent, IP, screen resolution, etc.
+  isActive      Boolean  @default(false)
+  firstSeen     DateTime @default(now())
+  lastSeen      DateTime @default(now())
+  verifiedAt    DateTime?
+  revokedAt     DateTime?
+
+  @@map("user_devices")
+  @@index([userId])
+  @@index([fingerprint])
+}
+
+model UserKYC {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  kycData     Json     // Hashed KYC information
+  status      KYCStatus @default(PENDING)
+  submittedAt DateTime @default(now())
+  verifiedBy  String?
+  verifiedAt  DateTime?
+  notes       String?
+
+  @@map("user_kyc")
+  @@index([userId])
+  @@index([status])
+}
+
+enum KYCStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Certificate65B {
+  id                String   @id @default(cuid())
+  caseId            String
+  case              Case     @relation(fields: [caseId], references: [id])
+  certificateNumber String   @unique // Format: 65B/YYYY/XXXX
+  generatedBy       String   // User ID who generated
+  generatedAt       DateTime @default(now())
+  
+  // Section 65B Compliance Fields
+  computerSystem    String   // Description of system used
+  computerOutput    String   // Nature of computer output
+  generatedBySystem String   // System/process that generated
+  purpose           String   // Purpose of certificate
+  
+  // Digital Evidence Details
+  evidenceType      String   // DOCUMENT | EVENT | NOTICE | AUDIT_LOG
+  evidenceId        String   // Reference to evidence
+  hashValue         String   // SHA-256 hash
+  timestamp         DateTime // When evidence was created
+  
+  // Certificate Content
+  certificateText   String   @db.Text // Full certificate text
+  pdfUrl            String?  // URL to generated PDF
+  pdfHash           String?  // Hash of PDF for integrity
+  
+  // Legal Compliance
+  isValid           Boolean  @default(true)
+  revokedAt         DateTime?
+  revocationReason  String?
+  
+  // Audit Trail
+  digitalSignature  String   // KMS signature of certificate
+  trustedTimestamp  String?  // RFC 3161 timestamp token
+
+  @@map("certificates_65b")
+  @@index([caseId])
+  @@index([certificateNumber])
+  @@index([generatedAt])
+}
+
+model CaseRegistrySubmission {
+  id                    String   @id @default(cuid())
+  caseId                String
+  case                  Case     @relation(fields: [caseId], references: [id])
+  
+  // Inverse for legacy migration
+  legacyCase            Case?    @relation("LegacySubmission")
+  
+  // Forensic Snapshots (v5.1.1)
+  submissionPayload     Json?    // Exact JSON/Metadata sent to registry
+  submissionHash        String?  // SHA-256 hash of the submitted package
+  responseArchive       Json?    // Raw unedited response from registry
+  
+  registryId            String?  // External Submission ID from e-Daakhil
+  diaryNumber           String?  // Temporary Diary Number during scrutiny
+  registrationNumber    String?  // Final Court Case Number
+  
+  // v9.1/v10.0 Disaster Recovery & National Audit
+  archiveUrl            String?  // S3 URL (Object Lock Compliance)
+  archiveKey            String?  // S3 Key for DR verification
+  xmlHash               String?  // SHA-256 of canonicalized XML
+  schemaVersion         String?  // G2G Schema Version (e.g. AFE_V3)
+  
+  scrutinyStatus        String   @default("SUBMITTED") // SUBMITTED | DEFICIENCY | ACCEPTED
+  scrutinyCode          String?  // Normalized defect code (e.g. HASH_MISMATCH)
+  scrutinyNotes         String?  // Feedback from commission clerks
+  
+  filedAt               DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  lastPollAt            DateTime?
+  
+  @@map("case_registry_submissions")
+  @@unique([caseId, diaryNumber])
+  @@index([registryId])
+  @@index([scrutinyStatus])
+}
+
+model TimestampAnchor {
+  id                String   @id @default(cuid())
+  anchorId          String   @unique
+  globalHash        String   // SHA-256 of global system state
+  trustedTimestamp  String   // RFC 3161 timestamp token
+  timestampAuthority String? // TSA server URL
+  activitySummary   Json     // Summary of recent activity
+  anchoredAt        DateTime @default(now())
+
+  @@map("timestamp_anchors")
+  @@index([anchoredAt])
+  @@index([anchorId])
+}
+
+model SystemEvent {
+  id                String   @id @default(cuid())
+  eventType         String   // READ_ONLY_MODE_ENTERED | DB_FAILOVER_COMPLETED | G2G_CIRCUIT_OPENED
+  payload           Json     // Metadata (nodeId, failoverDuration, epoch, etc.)
+  nodeId            String?
+  timestamp         DateTime @default(now())
+  
+  // v11.0 Infrastructure Chain-of-Integrity
+  hash              String   // SHA-256 hash
+  prevHash          String?
+  
+  @@map("system_events")
+  @@index([eventType])
+  @@index([timestamp])
+}
